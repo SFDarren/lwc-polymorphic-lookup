@@ -1,0 +1,11 @@
+<template>
+    <c-polymorphic-lookup 
+        label={label}
+        object-options={computedObjectOptions}
+        onselect={handleLookupSelection}>
+    </c-polymorphic-lookup>
+
+    <template if:true={required}>
+        <input class="slds-hide" type="text" value={selectedRecordId} required/>
+    </template>
+</template>

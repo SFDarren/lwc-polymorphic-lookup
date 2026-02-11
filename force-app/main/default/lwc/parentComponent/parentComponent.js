@@ -2,12 +2,36 @@ import { LightningElement } from 'lwc';
 
 export default class ParentComponent extends LightningElement {
     
-    // Define the objects you want to support
+    // Updated supportedObjects with subtitleField
     supportedObjects = [
-        { label: 'Opportunity', value: 'Opportunity', iconName: 'standard:opportunity' },
-        { label: 'Account', value: 'Account', iconName: 'standard:account' },
-        { label: 'Case', value: 'Case', iconName: 'standard:case' },
-        { label: 'Contact', value: 'Contact', iconName: 'standard:contact' }
+        { 
+            label: 'Opportunity', 
+            plural: 'Opportunities', 
+            value: 'Opportunity', 
+            iconName: 'standard:opportunity',
+            subtitleField: 'StageName' // Example: Show Stage as subtitle
+        },
+        { 
+            label: 'Account', 
+            plural: 'Accounts', 
+            value: 'Account', 
+            iconName: 'standard:account',
+            subtitleField: 'BillingCity' // Example: Show City
+        },
+        { 
+            label: 'Case', 
+            plural: 'Cases', 
+            value: 'Case', 
+            iconName: 'standard:case',
+            subtitleField: 'CaseNumber' 
+        },
+        { 
+            label: 'Contact', 
+            plural: 'Contacts', 
+            value: 'Contact', 
+            iconName: 'standard:contact',
+            subtitleField: 'Email' // Example: Show Email
+        }
     ];
 
     handleLookupSelection(event) {

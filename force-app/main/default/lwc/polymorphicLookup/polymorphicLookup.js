@@ -1,23 +1,45 @@
 import { LightningElement, api, track } from 'lwc';
 import { NavigationMixin } from 'lightning/navigation';
 import searchRecords from '@salesforce/apex/PolymorphicLookupController.searchRecords';
+import getLatestCreatedRecord from '@salesforce/apex/PolymorphicLookupController.getLatestCreatedRecord';
+import userId from "@salesforce/user/Id";
 
 export default class PolymorphicLookup extends NavigationMixin(LightningElement) {
     @api label = 'Related To';
     @api objectOptions = []; 
 
     @track selectedObject = {};
-    @track searchResults = [];
+    @track searchResults = []; // Dropdown results
+    @track modalSearchResults = []; // Modal results
     @track searchTerm = '';
     @track selectedRecord = null;
     
     isObjectDropdownOpen = false;
     isSearchDropdownOpen = false;
     isLoading = false;
+    isModalOpen = false; // Controls the "Show All" modal
+    isModalLoading = false;
+    isCreatingRecord = false;
     
-    // New state for help text
     showSelectionHelp = false; 
     searchThrottlingTimeout;
+
+    // Configuration for the Modal Datatable
+    // using 'button' type with 'base' variant looks like a text link
+    get modalColumns() {
+        return [
+            { 
+                label: 'Name', 
+                type: 'button', 
+                typeAttributes: { 
+                    label: { fieldName: 'title' }, 
+                    variant: 'base',
+                    name: 'select_record' 
+                } 
+            },
+            { label: this.selectedObject.subtitleField || 'Info', fieldName: 'subtitle' }
+        ];
+    }
 
     connectedCallback() {
         if (this.objectOptions && this.objectOptions.length > 0) {
@@ -30,13 +52,13 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
     }
 
     // --- Dynamic Classes ---
-
     get objectDropdownClass() {
         return `slds-combobox slds-dropdown-trigger slds-dropdown-trigger_click ${this.isObjectDropdownOpen ? 'slds-is-open' : ''}`;
     }
 
     get searchDropdownClass() {
-        return `slds-combobox slds-dropdown-trigger slds-dropdown-trigger_click ${this.isSearchDropdownOpen ? 'slds-is-open' : ''}`;
+        const isOpen = this.isSearchDropdownOpen && !this.isCreatingRecord;
+        return `slds-combobox slds-dropdown-trigger slds-dropdown-trigger_click ${isOpen ? 'slds-is-open' : ''}`;
     }
 
     get selectionContainerClass() {
@@ -44,14 +66,12 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
     }
 
     get placeholderText() {
-        return `Search ${this.selectedObject.label || '...'}`;
+        return `Search ${this.selectedObject.plural || '...'}`;
     }
 
     // --- Object Selector ---
-
     toggleObjectDropdown() {
         this.isObjectDropdownOpen = !this.isObjectDropdownOpen;
-        
         if (this.isObjectDropdownOpen) {
             this.isSearchDropdownOpen = false;
         }
@@ -62,7 +82,6 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
         this.selectedObject = this.objectOptions.find(opt => opt.value === selectedValue);
         this.isObjectDropdownOpen = false;
         
-        // Reset Search & Focus
         this.searchTerm = '';
         this.searchResults = [];
         this.isSearchDropdownOpen = false;
@@ -75,19 +94,61 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
         }, 0);
     }
 
-    // --- Search ---
-
-    handleSearchFocus() {
-        this.isObjectDropdownOpen = false;
-
-        this.isSearchDropdownOpen = true;
-        this.performSearch(); 
+    handleObjectKeyDown(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            
+            const selectedValue = event.currentTarget.dataset.value;
+            this.selectedObject = this.objectOptions.find(opt => opt.value === selectedValue);
+            this.isObjectDropdownOpen = false;
+            
+            this.searchTerm = '';
+            this.searchResults = [];
+            this.isSearchDropdownOpen = false;
+            
+            setTimeout(() => {
+                const searchInput = this.template.querySelector('input.slds-combobox__input');
+                if (searchInput) {
+                    searchInput.focus();
+                }
+            }, 0);
+        }
     }
 
-    handleSearchBlur() {
-        setTimeout(() => {
-            this.isSearchDropdownOpen = false;
-        }, 200);
+    handleObjectBlur(event) {
+        // 1. Check where the focus is going next
+        const nextFocusedElement = event.relatedTarget;
+
+        // 2. If the user clicked inside the component (e.g., clicked the scrollbar, 
+        //    or tabbed to an item in the list), DO NOT close.
+        if (nextFocusedElement && this.template.contains(nextFocusedElement)) {
+            return;
+        }
+
+        // 3. Focus has left the component entirely (clicked background or outside field)
+        this.isObjectDropdownOpen = false;
+    }
+
+    // --- Search Logic ---
+    handleSearchFocus() {
+        if(this.isCreatingRecord) return;
+        this.isObjectDropdownOpen = false;
+        this.isSearchDropdownOpen = true;
+        this.performSearch(5); // Limit 5 for dropdown
+    }
+
+    handleSearchBlur(event) {
+        const nextFocusedElement = event.relatedTarget;
+
+        // If the next focused element is INSIDE this component (e.g., the list items),
+        // DO NOT close the dropdown.
+        if (nextFocusedElement && this.template.contains(nextFocusedElement)) {
+            // Keep open
+            return;
+        }
+
+        // Only close if we are truly leaving the component
+        this.isSearchDropdownOpen = false;
     }
 
     handleSearchInput(event) {
@@ -99,36 +160,83 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
         }
 
         this.searchThrottlingTimeout = setTimeout(() => {
-            this.performSearch();
+            this.performSearch(5);
         }, 300);
     }
 
-    performSearch() {
-        this.isLoading = true;
+    // Reusable search function
+    performSearch(limitSize) {
+        // If it's the modal, set modal loading, else set input loading
+        const isModal = limitSize > 5;
+        if (isModal) this.isModalLoading = true;
+        else this.isLoading = true;
+
         searchRecords({ 
             objectApiName: this.selectedObject.value, 
             searchKey: this.searchTerm,
-            iconName: this.selectedObject.iconName
+            iconName: this.selectedObject.iconName,
+            subtitleField: this.selectedObject.subtitleField, // Pass the field config
+            queryLimit: limitSize
         })
         .then(results => {
-            this.searchResults = results;
-            this.isLoading = false;
+            if (isModal) {
+                this.modalSearchResults = results;
+                this.isModalLoading = false;
+            } else {
+                this.searchResults = results;
+                this.isLoading = false;
+            }
         })
         .catch(error => {
             console.error('Error', error);
-            this.searchResults = [];
-            this.isLoading = false;
+            if (isModal) {
+                this.modalSearchResults = [];
+                this.isModalLoading = false;
+            } else {
+                this.searchResults = [];
+                this.isLoading = false;
+            }
         });
     }
 
-    // --- Selection Actions ---
+    // --- Modal Logic ("Show All") ---
+    handleShowAll(event) {
+        // Prevent blur from closing the dropdown too early
+        if(event) event.preventDefault();
+        
+        this.isSearchDropdownOpen = false;
+        this.isModalOpen = true;
+        
+        // Fetch more results for the datatable
+        this.performSearch(50); 
+    }
 
+    handleCloseModal() {
+        this.isModalOpen = false;
+    }
+
+    handleModalRowAction(event) {
+        const actionName = event.detail.action.name;
+        const row = event.detail.row;
+
+        if (actionName === 'select_record') {
+            // Mimic the structure of handleRecordSelect
+            this.finalizeSelection(row.id, row.title, row.icon);
+            this.isModalOpen = false;
+        }
+    }
+
+    // --- Selection Actions ---
     handleRecordSelect(event) {
         event.preventDefault(); 
         const recordId = event.currentTarget.dataset.id;
         const recordName = event.currentTarget.dataset.title;
         const iconName = event.currentTarget.dataset.icon;
 
+        this.finalizeSelection(recordId, recordName, iconName);
+    }
+
+    finalizeSelection(recordId, recordName, iconName) {
         this.selectedRecord = {
             id: recordId,
             title: recordName,
@@ -139,9 +247,6 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
         this.searchTerm = '';
         this.isSearchDropdownOpen = false;
         this.dispatchSelection();
-
-        // Focus the "selected" input to trigger the help text immediately if desired
-        // or just wait for user interaction.
     }
 
     handleClearSelection() {
@@ -157,8 +262,7 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
         }, 0);
     }
 
-    // --- Selection State Interaction (New) ---
-
+    // --- Selection State Interaction ---
     handleSelectionFocus() {
         this.showSelectionHelp = true;
     }
@@ -174,16 +278,86 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
         }
     }
 
+    handleItemKeyDown(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            
+            // Check for specific actions based on data attributes or dataset
+            const action = event.currentTarget.dataset.action;
+
+            if (action === 'show-all') {
+                this.handleShowAll();
+            } else if (action === 'new-record') {
+                this.handleNewRecord(event);
+            } else {
+                // It is a standard record selection
+                const recordId = event.currentTarget.dataset.id;
+                const recordName = event.currentTarget.dataset.title;
+                const iconName = event.currentTarget.dataset.icon;
+                
+                this.finalizeSelection(recordId, recordName, iconName);
+            }
+        }
+    }
+
+    
+
+    initialLocationHref
+    locationHrefPoll
     handleNewRecord(event) {
         event.preventDefault();
+        this.isCreatingRecord = true;
         this.isSearchDropdownOpen = false;
+        this.initialLocationHref = window.location.href;
+        this.searchResults = [];
+
+        let hrefHasChanged = false;
+        this.locationHrefPoll = setInterval(() => {
+            if (hrefHasChanged && this.initialLocationHref == window.location.href) {
+                // means popup was launched and closed
+                clearInterval(this.locationHrefPoll)
+                this.locationHrefPoll = null;
+
+                this.isLoading = true;
+                // query record created by user in the last 30 seconds?
+                getLatestCreatedRecord({ 
+                    objectApiName: this.selectedObject.value, 
+                    iconName: this.selectedObject.iconName,
+                    userId: userId
+                }).then(results => {
+                    console.log('results: ', JSON.stringify(results, null, 2))
+                    if (results.length != 0) {
+                        const result = results[0];
+                        this.finalizeSelection(result.id, result.title, this.selectedObject.iconName);
+                    }
+                }).catch(error => {
+                    console.log('fail silently since this is just default error: ', JSON.stringify(error, null, 2))
+                }).finally(() => {
+                    this.isLoading = false;
+                    this.isCreatingRecord = false;
+                })
+            } else {
+                if (this.initialLocationHref != window.location.href) {
+                    hrefHasChanged = true;
+                }
+            }
+        }, 500)
+
         this[NavigationMixin.Navigate]({
             type: 'standard__objectPage',
             attributes: {
                 objectApiName: this.selectedObject.value,
                 actionName: 'new'
+            },
+            state : {
+                count: '1',
+                nooverride: '1',
+                useRecordTypeCheck : '1',
+                navigationLocation: 'RELATED_LIST' // this will make it stay in current record page after closed
             }
         });
+
+        
     }
 
     dispatchSelection() {

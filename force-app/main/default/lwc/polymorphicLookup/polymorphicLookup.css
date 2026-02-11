@@ -10,8 +10,11 @@
     align-items: center;
     height: 32px; 
     cursor: pointer;
-    padding-right: 1.5rem; /* Make room for the down arrow */
-    /* width: 3.5rem;  <-- REMOVED fixed width */
+    padding: 0 0.5rem; /* Make room for the down arrow */
+}
+
+.slds-combobox_object-switcher .slds-combobox__input, .slds-combobox--object-switcher .slds-combobox__input {
+    width: 4rem !important;
 }
 
 /* Ensure borders merge correctly */
@@ -66,4 +69,19 @@
 .slds-dropdown_fluid {
     max-height: 200px;
     overflow-y: auto;
+}
+
+/* Force the container to look clickable */
+.object-switcher-trigger {
+    cursor: pointer;
+}
+
+/* Make the icon "invisible" to mouse events. 
+   This ensures that when you click the icon, the click 
+   passes through to the button/div underneath.
+   It also inherits the 'pointer' cursor from the parent.
+*/
+
+lightning-icon.slds-input__icon {
+    pointer-events: none;
 }
