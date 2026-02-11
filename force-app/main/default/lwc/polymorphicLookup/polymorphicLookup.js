@@ -7,6 +7,8 @@ import userId from "@salesforce/user/Id";
 export default class PolymorphicLookup extends NavigationMixin(LightningElement) {
     @api label = 'Related To';
     @api objectOptions = []; 
+    // NEW: Accepts a generic object/map: { 'Account': "Sales_Org__c = '123'", ... }
+    @api filterConfig = {};
 
     @track selectedObject = {};
     @track searchResults = []; // Dropdown results
@@ -166,16 +168,22 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
 
     // Reusable search function
     performSearch(limitSize) {
-        // If it's the modal, set modal loading, else set input loading
         const isModal = limitSize > 5;
         if (isModal) this.isModalLoading = true;
         else this.isLoading = true;
+
+        // NEW: Extract specific filter for the currently selected object
+        let whereClause = '';
+        if (this.filterConfig && this.selectedObject.value && this.filterConfig[this.selectedObject.value]) {
+            whereClause = this.filterConfig[this.selectedObject.value];
+        }
 
         searchRecords({ 
             objectApiName: this.selectedObject.value, 
             searchKey: this.searchTerm,
             iconName: this.selectedObject.iconName,
-            subtitleField: this.selectedObject.subtitleField, // Pass the field config
+            subtitleField: this.selectedObject.subtitleField,
+            whereClause: whereClause, // Pass the filter to Apex
             queryLimit: limitSize
         })
         .then(results => {

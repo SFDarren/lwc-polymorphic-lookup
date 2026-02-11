@@ -1,9 +1,11 @@
  <template>
     <div class="slds-p-around_medium">
+         Accounts filtered to created since yesterday, Opportunity filtered to Closed Won
         <c-polymorphic-lookup 
-            label="Related To"
+            label="Related To (Filtered)"
             object-options={supportedObjects}
+            filter-config={filterConfiguration}
             onselect={handleLookupSelection}>
         </c-polymorphic-lookup>
     </div>
-</template>   
+</template>

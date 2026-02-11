@@ -2,21 +2,21 @@ import { LightningElement } from 'lwc';
 
 export default class ParentComponent extends LightningElement {
     
-    // Updated supportedObjects with subtitleField
+    // Configuration for the Object Dropdown
     supportedObjects = [
         { 
             label: 'Opportunity', 
             plural: 'Opportunities', 
             value: 'Opportunity', 
             iconName: 'standard:opportunity',
-            subtitleField: 'StageName' // Example: Show Stage as subtitle
+            subtitleField: 'StageName' 
         },
         { 
             label: 'Account', 
             plural: 'Accounts', 
             value: 'Account', 
             iconName: 'standard:account',
-            subtitleField: 'BillingCity' // Example: Show City
+            subtitleField: 'BillingCity' 
         },
         { 
             label: 'Case', 
@@ -30,9 +30,22 @@ export default class ParentComponent extends LightningElement {
             plural: 'Contacts', 
             value: 'Contact', 
             iconName: 'standard:contact',
-            subtitleField: 'Email' // Example: Show Email
+            subtitleField: 'Email' 
         }
     ];
+
+    // NEW: Define the filters here
+    get filterConfiguration() {
+        return {
+            // Filter 1: Accounts created yesterday or today
+            'Account': "CreatedDate >= YESTERDAY",
+            
+            // Filter 2: Only Closed Won Opportunities
+            'Opportunity': "StageName = 'Closed Won'"
+            
+            // Note: Case and Contact have no entry, so they will show ALL records (default behavior)
+        };
+    }
 
     handleLookupSelection(event) {
         const { recordId, objectType } = event.detail;

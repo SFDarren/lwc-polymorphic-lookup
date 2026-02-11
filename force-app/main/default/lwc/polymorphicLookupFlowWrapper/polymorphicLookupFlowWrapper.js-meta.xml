@@ -13,6 +13,9 @@
             <property name="objectApiNames" label="Object API Names (CSV)" type="String" description="Comma-separated list (e.g., Account,Contact,Case)" role="inputOnly"/>
             <property name="iconNames" label="Icon Names (CSV)" type="String" description="Comma-separated list corresponding to objects (e.g., standard:account,standard:contact)" role="inputOnly"/>
             <property name="subtitleFields" label="Subtitle Fields (CSV)" type="String" description="Comma-separated list of fields to show under the name (e.g., BillingCity,Email)" role="inputOnly"/>
+            
+            <property name="filterJson" label="Filter Configuration (JSON)" type="String" description='JSON Object mapping API Names to WHERE clauses. Example: {"Account": "BillingCity = &#39;New York&#39;"}' role="inputOnly"/>
+            
             <property name="required" label="Required" type="Boolean" default="false" role="inputOnly"/>
 
             <property name="selectedRecordId" label="Output: Selected Record ID" type="String" role="outputOnly"/>
