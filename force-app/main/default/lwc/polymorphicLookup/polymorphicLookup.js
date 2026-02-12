@@ -1,3 +1,4 @@
+/* polymorphicLookup.js */
 import { LightningElement, api, track } from 'lwc';
 import { NavigationMixin } from 'lightning/navigation';
 import searchRecords from '@salesforce/apex/PolymorphicLookupController.searchRecords';
@@ -7,6 +8,7 @@ import userId from "@salesforce/user/Id";
 export default class PolymorphicLookup extends NavigationMixin(LightningElement) {
     @api label = 'Related To';
     @api objectOptions = []; 
+    @api required = false;
     // NEW: Accepts a generic object/map: { 'Account': "Sales_Org__c = '123'", ... }
     @api filterConfig = {};
 
@@ -68,7 +70,7 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
     }
 
     get placeholderText() {
-        return `Search ${this.selectedObject.plural || '...'}`;
+        return `Search ${this.selectedObject.plural + '...' || '...'}`;
     }
 
     // --- Object Selector ---

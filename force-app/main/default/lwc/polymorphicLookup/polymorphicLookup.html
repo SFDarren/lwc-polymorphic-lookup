@@ -1,6 +1,12 @@
+<!-- polymorphicLookup.html -->
 <template>
     <div class="slds-form-element">
-        <label if:true={label} class="slds-form-element__label">{label}</label>
+        <label if:true={label} class="slds-form-element__label">
+            <template lwc:if={required}>
+                <span style="color: red">*&nbsp;</span>
+            </template>
+            {label}
+        </label>
         <div class="slds-form-element__control">
             
             <template if:false={isSelectionMade}>

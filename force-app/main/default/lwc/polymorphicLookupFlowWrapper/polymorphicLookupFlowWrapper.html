@@ -1,12 +1,15 @@
 <template>
     <c-polymorphic-lookup 
         label={label}
+        required={required}
         object-options={computedObjectOptions}
         filter-config={computedFilterConfig}
         onselect={handleLookupSelection}>
     </c-polymorphic-lookup>
 
-    <template if:true={required}>
-        <input class="slds-hide" type="text" value={selectedRecordId} required/>
+    <template lwc:if={errorToRender}>
+        <div class="slds-text-color_error slds-m-top_xx-small" aria-live="polite">
+            <lightning-formatted-rich-text disable-linkify value={errorToRender}></lightning-formatted-rich-text>
+        </div>
     </template>
 </template>

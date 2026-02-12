@@ -1,11 +1,83 @@
- <template>
-    <div class="slds-p-around_medium">
-         Accounts filtered to created since yesterday, Opportunity filtered to Closed Won
-        <c-polymorphic-lookup 
-            label="Related To (Filtered)"
-            object-options={supportedObjects}
-            filter-config={filterConfiguration}
-            onselect={handleLookupSelection}>
-        </c-polymorphic-lookup>
+<!-- parentComponent.html -->
+<template>
+    <div class="slds-p-around_medium slds-theme_default">
+        
+        <div class="slds-m-bottom_medium">
+            <h1 class="slds-text-heading_medium slds-m-bottom_x-small">Polymorphic Lookup Demo</h1>
+            <p class="slds-text-body_regular slds-text-color_weak">
+                Demonstrating dynamic object switching, custom filtering (SOSL/SOQL), and event handling.
+            </p>
+        </div>
+
+        <lightning-layout multiple-rows="true" horizontal-align="space">
+            
+            <lightning-layout-item size="12" medium-device-size="7" padding="around-small">
+                <lightning-card icon-name="standard:log_a_call" title="Log a Call">
+                    <div class="slds-p-horizontal_medium">
+                        <lightning-input 
+                            label="Subject" 
+                            value="Discussing Q1 Renewals" 
+                            class="slds-m-bottom_small">
+                        </lightning-input>
+
+                        <div class="slds-box slds-theme_shade slds-m-bottom_small">
+                            <c-polymorphic-lookup 
+                                label="Related To (Polymorphic)"
+                                object-options={supportedObjects}
+                                filter-config={filterConfiguration}
+                                onselect={handleLookupSelection}>
+                            </c-polymorphic-lookup>
+                            <div class="slds-text-body_small slds-text-color_weak slds-m-top_xx-small">
+                                *Filters: Accounts (created > yesterday), Opps (Closed Won only).
+                            </div>
+                        </div>
+
+                        <lightning-input 
+                            type="date" 
+                            label="Due Date" 
+                            class="slds-m-bottom_small">
+                        </lightning-input>
+
+                        <lightning-textarea 
+                            label="Comments" 
+                            placeholder="Enter call notes..."
+                            class="slds-m-bottom_medium">
+                        </lightning-textarea>
+
+                        <div class="slds-align_absolute-center">
+                            <lightning-button variant="brand" label="Log Call" onclick={handleSave}></lightning-button>
+                        </div>
+                    </div>
+                </lightning-card>
+            </lightning-layout-item>
+
+            <lightning-layout-item size="12" medium-device-size="5" padding="around-small">
+                <lightning-card icon-name="standard:debug" title="Live Event Log">
+                    <div class="slds-p-horizontal_medium" style="height: 350px; overflow-y: auto;">
+                        <template if:false={selectionLog.length}>
+                            <div class="slds-text-align_center slds-text-color_weak slds-p-top_large">
+                                Interact with the lookup to see events fire here...
+                            </div>
+                        </template>
+                        
+                        <template for:each={selectionLog} for:item="log">
+                            <div key={log.timestamp} class="slds-box slds-box_x-small slds-m-bottom_x-small slds-theme_shade">
+                                <div class="slds-grid slds-grid_align-spread">
+                                    <span class="slds-text-title_bold">{log.action}</span>
+                                    <span class="slds-text-body_small">{log.time}</span>
+                                </div>
+                                <div class="slds-m-top_xx-small">
+                                    ID: <span class="slds-text-color_success">{log.recordId}</span>
+                                </div>
+                                <div>
+                                    Object: <span class="slds-text-color_brand">{log.objectType}</span>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </lightning-card>
+            </lightning-layout-item>
+
+        </lightning-layout>
     </div>
 </template>

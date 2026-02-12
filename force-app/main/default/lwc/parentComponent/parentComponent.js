@@ -1,7 +1,11 @@
-import { LightningElement } from 'lwc';
+/* parentComponent.js */
+import { LightningElement, track } from 'lwc';
+import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 
 export default class ParentComponent extends LightningElement {
     
+    @track selectionLog = [];
+
     // Configuration for the Object Dropdown
     supportedObjects = [
         { 
@@ -16,14 +20,7 @@ export default class ParentComponent extends LightningElement {
             plural: 'Accounts', 
             value: 'Account', 
             iconName: 'standard:account',
-            subtitleField: 'BillingCity' 
-        },
-        { 
-            label: 'Case', 
-            plural: 'Cases', 
-            value: 'Case', 
-            iconName: 'standard:case',
-            subtitleField: 'CaseNumber' 
+            subtitleField: 'Phone' // Changed to phone for better demo data
         },
         { 
             label: 'Contact', 
@@ -31,24 +28,50 @@ export default class ParentComponent extends LightningElement {
             value: 'Contact', 
             iconName: 'standard:contact',
             subtitleField: 'Email' 
+        },
+        { 
+            label: 'Case', 
+            plural: 'Cases', 
+            value: 'Case', 
+            iconName: 'standard:case',
+            subtitleField: 'Status' 
         }
     ];
 
-    // NEW: Define the filters here
     get filterConfiguration() {
         return {
-            // Filter 1: Accounts created yesterday or today
-            'Account': "CreatedDate >= YESTERDAY",
-            
-            // Filter 2: Only Closed Won Opportunities
-            'Opportunity': "StageName = 'Closed Won'"
-            
-            // Note: Case and Contact have no entry, so they will show ALL records (default behavior)
+            // Updated to be a bit looser so you definitely get results in your screenshot
+            'Account': "CreatedDate >= LAST_N_DAYS:30", 
+            'Opportunity': "IsWon = true"
         };
     }
 
     handleLookupSelection(event) {
         const { recordId, objectType } = event.detail;
+        
+        // Create a log entry for the UI
+        const newLog = {
+            timestamp: Date.now(),
+            time: new Date().toLocaleTimeString(),
+            action: recordId ? 'Record Selected' : 'Selection Cleared',
+            recordId: recordId || 'N/A',
+            objectType: objectType || 'N/A'
+        };
+
+        // Add to start of array
+        this.selectionLog = [newLog, ...this.selectionLog];
+        
         console.log('User selected:', recordId, 'from object:', objectType);
+    }
+
+    handleSave() {
+        // Just for demo effect
+        this.dispatchEvent(
+            new ShowToastEvent({
+                title: 'Success',
+                message: 'Call logged successfully!',
+                variant: 'success'
+            })
+        );
     }
 }
