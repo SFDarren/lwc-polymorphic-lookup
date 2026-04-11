@@ -9,13 +9,14 @@ A production-ready, plug-and-play combobox field for Salesforce LWC and Flow scr
 ## Features
 
 - **Multi-object switcher** — hidden automatically when only one object is configured
+- **Multi-select mode** — opt-in pill-based multi-selection with cross-object support, max cap, and parent-managed display option
 - **Throttled search** with inline dropdown and "Show All" modal (datatable)
 - **Per-object SOQL filters** — `filterConfig` injects a WHERE clause per object
 - **"New Record" flow** — opens an object create popup via NavigationMixin, auto-selects the newly created record on return
 - **Fixed-position dropdown** — escapes CSS `transform` stacking contexts (e.g., SLDS modals)
 - **Full Form API** — `checkValidity()`, `reportValidity()`, `setCustomValidity()` match LWC platform base components
 - **Flow-ready wrapper** — CSV string inputs compatible with Flow Builder text fields, implements the Flow `validate()` lifecycle
-- **Pre-population** — set `value` to a record ID to resolve and display the record name on load
+- **Pre-population** — set `value` to a record ID (or array of IDs in multi-select) to resolve and display the record name on load
 - **Accessibility** — keyboard navigation (Arrow keys, Escape), ARIA labels, live regions, modal focus management
 - **CSS custom properties** — theme the dropdown height, focus ring color, and z-index from the consumer
 
@@ -122,6 +123,60 @@ this.template.querySelector('c-polymorphic-lookup').reportValidity();
 
 ---
 
+#### Multi-select
+
+Enable multi-select with the `multi-select` attribute. Selected records render as removable pills above the search input.
+
+```html
+<c-polymorphic-lookup
+    label="Related Records"
+    object-options={objectOptions}
+    multi-select
+    max-selections="5"
+    onselect={handleSelect}>
+</c-polymorphic-lookup>
+```
+
+```js
+// Multi-select event detail
+handleSelect(event) {
+    const { action, changedRecord, selectedRecords } = event.detail;
+    // action: 'add' | 'remove' | 'clear'
+    // changedRecord: { id, title, icon, objectType } | null
+    // selectedRecords: full current array of selected records
+}
+```
+
+**Lock the object type after the first pick** (user can't switch to a different object once they've started selecting):
+
+```html
+<c-polymorphic-lookup
+    object-options={multiObjectOptions}
+    multi-select
+    allow-cross-object-selection={false}
+    onselect={handleSelect}>
+</c-polymorphic-lookup>
+```
+
+**Delegate pill display to the parent** — the component tracks state and fires events but renders no pills:
+
+```html
+<c-polymorphic-lookup
+    object-options={objectOptions}
+    multi-select
+    show-pills={false}
+    onselect={handleSelect}>
+</c-polymorphic-lookup>
+```
+
+**Programmatic clear:**
+
+```js
+this.template.querySelector('c-polymorphic-lookup').clearAll();
+```
+
+---
+
 ### 2. Flow Screen
 
 Drag **Polymorphic Lookup (Flow)** onto a Flow screen. No JavaScript required.
@@ -138,14 +193,23 @@ Drag **Polymorphic Lookup (Flow)** onto a Flow screen. No JavaScript required.
 | **Dropdown Result Limit** | Number | Default: 5 |
 | **Modal Result Limit** | Number | Default: 50 |
 | **Placeholder Text** | Text | Overrides auto-generated placeholder |
+| **Multi-Select** | Boolean | Allows selecting multiple records |
+| **Allow Cross-Object Selection** | Boolean | When `false`, locks object switcher after first pick (default `true`) |
+| **Maximum Selections** | Number | Caps the number of selections; blank = unlimited |
 
-**Outputs** (use in subsequent Flow elements):
+**Outputs — single-select** (use in subsequent Flow elements):
 - `{!YourComponentName.selectedRecordId}` — 18-char record ID
 - `{!YourComponentName.selectedObjectType}` — SObject API name
+
+**Outputs — multi-select:**
+- `{!YourComponentName.selectedRecordIds}` — comma-separated record IDs
+- `{!YourComponentName.selectedObjectTypes}` — comma-separated SObject API names (parallel to IDs)
 
 ---
 
 ## Full @api Surface
+
+**Single-select / shared:**
 
 | Property | Type | Default | Description |
 |---|---|---|---|
@@ -155,8 +219,8 @@ Drag **Polymorphic Lookup (Flow)** onto a Flow screen. No JavaScript required.
 | `filterConfig` | Object | `{}` | Per-object SOQL WHERE clauses |
 | `showCreate` | Boolean | `false` | Adds "New {Object}" option |
 | `disabled` | Boolean | `false` | Disables all interaction |
-| `value` | String | `null` | Pre-populate with a record ID |
-| `valueObjectApiName` | String | `null` | Required for `value` in multi-object mode |
+| `value` | String \| String[] | `null` | Pre-populate: record ID (single) or array of IDs (multi-select) |
+| `valueObjectApiName` | String | `null` | Required for `value` pre-population in multi-object mode |
 | `variant` | String | `"standard"` | `"standard"` or `"label-hidden"` |
 | `placeholder` | String | auto | Overrides auto-generated placeholder |
 | `dropdownLimit` | Integer | `5` | Max records in inline dropdown |
@@ -164,15 +228,44 @@ Drag **Polymorphic Lookup (Flow)** onto a Flow screen. No JavaScript required.
 | `fieldLevelHelp` | String | `null` | Tooltip next to label |
 | `messageWhenValueMissing` | String | `"Complete this field."` | Validation error text |
 
+**Multi-select:**
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `multiSelect` | Boolean | `false` | Enables multi-select mode |
+| `allowCrossObjectSelection` | Boolean | `true` | When `false`, locks object switcher after first pick |
+| `showPills` | Boolean | `true` | When `false`, parent handles display; component still tracks state and fires events |
+| `maxSelections` | Integer | `null` | Max number of selections; `null` = unlimited |
+
 | Method | Returns | Description |
 |---|---|---|
 | `checkValidity()` | Boolean | `true` if valid; no UI change |
 | `reportValidity()` | Boolean | Shows/hides inline error; returns validity |
 | `setCustomValidity(msg)` | void | Set or clear a custom error string |
+| `clearAll()` | void | Clears all selections in multi-select mode |
 
-| Event | Detail | Description |
+| Getter | Returns | Description |
+|---|---|---|
+| `value` | String \| String[] | Selected record ID (single) or array of IDs (multi) |
+| `values` | String[] | Always an array — stable type for consumers regardless of mode |
+
+**Events:**
+
+| Event | Detail (single-select) | Description |
 |---|---|---|
 | `select` | `{ recordId, objectType, recordName, iconName }` | Fires on selection and on clear (`recordId` is `null` on clear) |
+
+In multi-select mode the same `select` event fires with an enriched detail:
+
+```js
+{
+    action: 'add' | 'remove' | 'clear',
+    changedRecord: { id, title, icon, objectType },   // null on 'clear'
+    selectedRecords: [{ id, title, icon, objectType }, ...],
+    // Backwards-compat fields (populated on 'add', null on 'remove'/'clear')
+    recordId, objectType, recordName, iconName
+}
+```
 
 ---
 
