@@ -66,6 +66,25 @@ public with sharing class PolymorphicLookupController {
         return executeQueryWithBinds(baseQuery, bindParams, safeObject, iconName, safeSubtitleField);
     }
 
+    @AuraEnabled(cacheable=true)
+    public static List<LookupRecord> getRecordById(String recordId, String objectApiName, String iconName, String subtitleField) {
+        String safeObject = String.escapeSingleQuotes(objectApiName);
+        String safeSubtitleField = (String.isNotBlank(subtitleField)) ? String.escapeSingleQuotes(subtitleField) : null;
+
+        Map<String, Object> bindParams = new Map<String, Object>{
+            'recordId' => recordId
+        };
+
+        String selectClause = 'SELECT Id, Name';
+        if (safeSubtitleField != null) {
+            selectClause += ', ' + safeSubtitleField;
+        }
+
+        String query = selectClause + ' FROM ' + safeObject + ' WHERE Id = :recordId LIMIT 1';
+
+        return executeQueryWithBinds(query, bindParams, safeObject, iconName, safeSubtitleField);
+    }
+
     @AuraEnabled
     public static List<LookupRecord> getLatestCreatedRecord(String objectApiName, String iconName, String userId) {
         String safeObject = String.escapeSingleQuotes(objectApiName);

@@ -1,11 +1,14 @@
 <!-- polymorphicLookup.html -->
 <template>
     <div class="slds-form-element">
-        <label if:true={label} class="slds-form-element__label">
+        <label if:true={label} class={labelClass}>
             <template lwc:if={required}>
                 <span style="color: red">*&nbsp;</span>
             </template>
             {label}
+            <template lwc:if={fieldLevelHelp}>
+                <lightning-helptext content={fieldLevelHelp}></lightning-helptext>
+            </template>
         </label>
         <div class="slds-form-element__control">
             <template if:false={isSelectionMade}>
@@ -54,6 +57,7 @@
                                     role="textbox"
                                     placeholder={placeholderText}
                                     value={searchTerm}
+                                    disabled={disabled}
                                     onfocus={handleSearchFocus}
                                     onblur={handleSearchBlur}
                                     oninput={handleSearchInput} />
@@ -159,7 +163,7 @@
                                 <span class="slds-truncate">{selectedRecord.title}</span>
                             </div>
 
-                            <button class="slds-button slds-button_icon slds-input__icon slds-input__icon_right" title="Remove selected option" onclick={handleClearSelection}>
+                            <button class="slds-button slds-button_icon slds-input__icon slds-input__icon_right" title="Remove selected option" onclick={handleClearSelection} disabled={disabled}>
                                 <lightning-icon icon-name="utility:close" size="x-small" class="slds-button__icon"></lightning-icon>
                                 <span class="slds-assistive-text">Remove selected option</span>
                             </button>

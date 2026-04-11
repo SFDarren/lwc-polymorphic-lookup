@@ -6,15 +6,41 @@ import { LightningElement, api, track } from "lwc";
 import { NavigationMixin } from "lightning/navigation";
 import searchRecords from "@salesforce/apex/PolymorphicLookupController.searchRecords";
 import getLatestCreatedRecord from "@salesforce/apex/PolymorphicLookupController.getLatestCreatedRecord";
+import getRecordById from "@salesforce/apex/PolymorphicLookupController.getRecordById";
 import userId from "@salesforce/user/Id";
 
 export default class PolymorphicLookup extends NavigationMixin(LightningElement) {
     @api label = "Related To";
     @api objectOptions = [];
     @api required = false;
-    // NEW: Accepts a generic object/map: { 'Account': "Sales_Org__c = '123'", ... }
     @api filterConfig = {};
     @api showCreate;
+    @api disabled = false;
+    @api variant = "standard"; // "standard" | "label-hidden"
+    @api placeholder;
+    @api dropdownLimit = 5;
+    @api modalLimit = 50;
+    @api fieldLevelHelp;
+    @api messageWhenValueMissing = "Complete this field.";
+    @api valueObjectApiName; // required when objectOptions has >1 entry and value is set externally
+
+    // Pre-population: accepts a record ID. Resolves the display name via Apex.
+    _value = null;
+    _valueResolved = false;
+
+    @api
+    get value() {
+        return this._value;
+    }
+    set value(recordId) {
+        this._value = recordId;
+        this._valueResolved = false;
+        if (recordId) {
+            this._resolveRecordById(recordId);
+        } else {
+            this.selectedRecord = null;
+        }
+    }
 
     @track selectedObject = {};
     @track searchResults = []; // Dropdown results
@@ -104,6 +130,51 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
         if (this.objectOptions && this.objectOptions.length > 0) {
             this.selectedObject = this.objectOptions[0];
         }
+        // If value was set before connectedCallback (e.g., Flow pre-population), resolve now
+        if (this._value && !this._valueResolved) {
+            this._resolveRecordById(this._value);
+        }
+    }
+
+    _resolveRecordById(recordId) {
+        // Determine which object to use for the lookup
+        let objectApiName = this.valueObjectApiName;
+        let iconName;
+        let subtitleField;
+        if (!objectApiName && this.objectOptions && this.objectOptions.length === 1) {
+            objectApiName = this.objectOptions[0].value;
+            iconName = this.objectOptions[0].iconName;
+            subtitleField = this.objectOptions[0].subtitleField;
+        } else if (objectApiName && this.objectOptions) {
+            const match = this.objectOptions.find((o) => o.value === objectApiName);
+            if (match) {
+                iconName = match.iconName;
+                subtitleField = match.subtitleField;
+            }
+        }
+        if (!objectApiName) return;
+
+        getRecordById({ recordId, objectApiName, iconName: iconName || "", subtitleField: subtitleField || null })
+            .then((results) => {
+                if (results && results.length > 0) {
+                    const rec = results[0];
+                    // Sync selectedObject to the resolved object type
+                    if (objectApiName && this.objectOptions) {
+                        const match = this.objectOptions.find((o) => o.value === objectApiName);
+                        if (match) this.selectedObject = match;
+                    }
+                    this.selectedRecord = {
+                        id: rec.id,
+                        title: rec.title,
+                        icon: rec.icon,
+                        objectType: objectApiName
+                    };
+                    this._valueResolved = true;
+                }
+            })
+            .catch((error) => {
+                console.error("PolymorphicLookup: failed to resolve record by ID", error);
+            });
     }
 
     disconnectedCallback() {
@@ -137,7 +208,14 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
     }
 
     get placeholderText() {
+        if (this.placeholder) return this.placeholder;
         return `Search ${this.selectedObject.plural + "..." || "..."}`;
+    }
+
+    get labelClass() {
+        return this.variant === "label-hidden"
+            ? "slds-form-element__label slds-assistive-text"
+            : "slds-form-element__label";
     }
 
     get isSingleObject() {
@@ -150,6 +228,7 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
 
     // --- Object Selector ---
     toggleObjectDropdown() {
+        if (this.disabled) return;
         this.isObjectDropdownOpen = !this.isObjectDropdownOpen;
         if (this.isObjectDropdownOpen) {
             this.isSearchDropdownOpen = false;
@@ -210,12 +289,12 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
 
     // --- Search Logic ---
     handleSearchFocus() {
-        if (this.isCreatingRecord) return;
+        if (this.disabled || this.isCreatingRecord) return;
         this.isObjectDropdownOpen = false;
         this.isSearchDropdownOpen = true;
         this._calculateDropdownPosition();
         this._startPositionLoop();
-        this.performSearch(5); // Limit 5 for dropdown
+        this.performSearch(this.dropdownLimit);
     }
 
     handleSearchBlur(event) {
@@ -243,7 +322,7 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
         }
 
         this.searchThrottlingTimeout = setTimeout(() => {
-            this.performSearch(5);
+            this.performSearch(this.dropdownLimit);
         }, 300);
     }
 
@@ -303,7 +382,7 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
         this.isModalOpen = true;
 
         // Fetch more results for the datatable
-        this.performSearch(50);
+        this.performSearch(this.modalLimit);
     }
 
     handleCloseModal() {
@@ -332,6 +411,7 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
     }
 
     finalizeSelection(recordId, recordName, iconName) {
+        this._value = recordId;
         this.selectedRecord = {
             id: recordId,
             title: recordName,
@@ -346,7 +426,9 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
     }
 
     handleClearSelection() {
+        if (this.disabled) return;
         this.selectedRecord = null;
+        this._value = null;
         this.showSelectionHelp = false;
         this.dispatchSelection();
 
@@ -400,6 +482,7 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
     locationHrefPoll;
     handleNewRecord(event) {
         event.preventDefault();
+        if (this.disabled) return;
         this.isCreatingRecord = true;
         this.isSearchDropdownOpen = false;
         this.initialLocationHref = window.location.href;

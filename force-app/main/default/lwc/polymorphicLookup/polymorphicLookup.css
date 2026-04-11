@@ -95,3 +95,12 @@ lightning-icon.slds-input__icon {
     border-start-start-radius: var(--slds-s-input-radius-border);
     border-end-start-radius: var(--slds-s-input-radius-border);
 }
+
+/* Disabled state */
+:host([disabled]) .slds-combobox__input,
+:host([disabled]) .object-switcher-btn,
+:host([disabled]) .slds-input_faux {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
