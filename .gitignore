@@ -49,3 +49,5 @@ $RECYCLE.BIN/
 
 **/githubRepoView/
 **/GithubRepoController.cls*
+
+.sfx*
