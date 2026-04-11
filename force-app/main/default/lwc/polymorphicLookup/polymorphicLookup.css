@@ -113,3 +113,23 @@ lightning-icon.slds-input__icon {
     cursor: not-allowed;
     pointer-events: none;
 }
+
+/* --- Multi-Select Pill Container --- */
+.poly-pill-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    padding: 0.25rem 0;
+}
+
+/* Locked object switcher — visual indicator */
+.object-switcher-btn[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Max-selections reached — dim the input */
+.slds-combobox__input:disabled {
+    background-color: var(--slds-g-color-neutral-base-95, #f3f3f3);
+    cursor: not-allowed;
+}

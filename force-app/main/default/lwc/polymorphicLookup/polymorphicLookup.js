@@ -1,5 +1,5 @@
-/* polymorphicLookup.js 
- * date: 10 Apr 2026 
+/* polymorphicLookup.js
+ * date: 10 Apr 2026
  * author: Darren Seet
  * */
 import { LightningElement, api, track } from "lwc";
@@ -24,29 +24,56 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
     @api messageWhenValueMissing = "Complete this field.";
     @api valueObjectApiName; // required when objectOptions has >1 entry and value is set externally
 
-    // Pre-population: accepts a record ID. Resolves the display name via Apex.
+    // Multi-select
+    @api multiSelect = false;
+    @api allowCrossObjectSelection = true;
+    @api showPills = true;
+    @api maxSelections;
+
+    // Pre-population: accepts a record ID (single) or array of IDs (multi).
     _value = null;
     _valueResolved = false;
 
     @api
     get value() {
+        if (this.multiSelect) {
+            return this._selectedRecords.map((r) => r.id);
+        }
         return this._value;
     }
-    set value(recordId) {
-        this._value = recordId;
-        this._valueResolved = false;
-        if (recordId) {
-            this._resolveRecordById(recordId);
+    set value(v) {
+        if (this.multiSelect) {
+            const ids = Array.isArray(v) ? v : v ? v.split(",").map((s) => s.trim()) : [];
+            this._selectedRecords = [];
+            ids.forEach((id) => {
+                if (id) this._resolveRecordById(id, true);
+            });
         } else {
-            this.selectedRecord = null;
+            this._value = v;
+            this._valueResolved = false;
+            if (v) {
+                this._resolveRecordById(v, false);
+            } else {
+                this.selectedRecord = null;
+            }
         }
+    }
+
+    // Always returns an array of selected IDs regardless of mode — stable type for consumers.
+    @api
+    get values() {
+        if (this.multiSelect) {
+            return this._selectedRecords.map((r) => r.id);
+        }
+        return this._value ? [this._value] : [];
     }
 
     @track selectedObject = {};
     @track searchResults = []; // Dropdown results
     @track modalSearchResults = []; // Modal results
     @track searchTerm = "";
-    @track selectedRecord = null;
+    @track selectedRecord = null; // Single-select selection
+    @track _selectedRecords = []; // Multi-select selections
     @track searchError = null;
 
     _customValidity = "";
@@ -134,13 +161,18 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
         if (this.objectOptions && this.objectOptions.length > 0) {
             this.selectedObject = this.objectOptions[0];
         }
-        // If value was set before connectedCallback (e.g., Flow pre-population), resolve now
-        if (this._value && !this._valueResolved) {
-            this._resolveRecordById(this._value);
+        if (this.multiSelect) {
+            const ids = Array.isArray(this._value) ? this._value : [];
+            ids.forEach((id) => {
+                if (id) this._resolveRecordById(id, true);
+            });
+        } else if (this._value && !this._valueResolved) {
+            // If value was set before connectedCallback (e.g., Flow pre-population), resolve now
+            this._resolveRecordById(this._value, false);
         }
     }
 
-    _resolveRecordById(recordId) {
+    _resolveRecordById(recordId, appendToMulti) {
         // Determine which object to use for the lookup
         let objectApiName = this.valueObjectApiName;
         let iconName;
@@ -162,18 +194,28 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
             .then((results) => {
                 if (results && results.length > 0) {
                     const rec = results[0];
-                    // Sync selectedObject to the resolved object type
-                    if (objectApiName && this.objectOptions) {
-                        const match = this.objectOptions.find((o) => o.value === objectApiName);
-                        if (match) this.selectedObject = match;
+                    if (appendToMulti) {
+                        // Deduplicate before appending
+                        if (!this._selectedRecords.find((r) => r.id === rec.id)) {
+                            this._selectedRecords = [
+                                ...this._selectedRecords,
+                                { id: rec.id, title: rec.title, icon: rec.icon, objectType: objectApiName }
+                            ];
+                        }
+                    } else {
+                        // Sync selectedObject to the resolved object type
+                        if (objectApiName && this.objectOptions) {
+                            const match = this.objectOptions.find((o) => o.value === objectApiName);
+                            if (match) this.selectedObject = match;
+                        }
+                        this.selectedRecord = {
+                            id: rec.id,
+                            title: rec.title,
+                            icon: rec.icon,
+                            objectType: objectApiName
+                        };
+                        this._valueResolved = true;
                     }
-                    this.selectedRecord = {
-                        id: rec.id,
-                        title: rec.title,
-                        icon: rec.icon,
-                        objectType: objectApiName
-                    };
-                    this._valueResolved = true;
                 }
             })
             .catch((error) => {
@@ -189,12 +231,68 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
         }
     }
 
+    // --- Computed Getters ---
+
+    get isMultiSelect() {
+        return this.multiSelect === true;
+    }
+
+    // In multi-select, input is always visible (never replaced by a selection display)
+    get isInputVisible() {
+        return this.isMultiSelect || !this.isSelectionMade;
+    }
+
+    // Single-select: input replaced by faux-pill when a selection is made
     get isSelectionMade() {
         return !!this.selectedRecord;
     }
 
+    // The single-select pill-like faux input — only shown in single-select mode
+    get showSingleSelectPill() {
+        return !this.isMultiSelect && !!this.selectedRecord;
+    }
+
+    // Multi-select pill container — only shown when multiSelect + showPills + has selections
+    get showPillContainer() {
+        return this.isMultiSelect && this.showPills !== false && this._selectedRecords.length > 0;
+    }
+
+    // Object switcher locked after first pick when cross-object selection is disallowed
+    get isObjectSwitcherLocked() {
+        return this.isMultiSelect && this.allowCrossObjectSelection === false && this._selectedRecords.length > 0;
+    }
+
+    // Whether max selections has been reached
+    get isAtMaxSelections() {
+        return this.isMultiSelect && this.maxSelections != null && this._selectedRecords.length >= this.maxSelections;
+    }
+
+    // Combined disabled state for the search input
+    get isSearchInputDisabled() {
+        return this.disabled || this.isAtMaxSelections;
+    }
+
+    // Show object icon on pills when there are multiple object types available
+    get showObjectIconOnPills() {
+        return !this.isSingleObject;
+    }
+
+    // Exclude already-selected records from dropdown results
+    get filteredSearchResults() {
+        if (!this.isMultiSelect || !this._selectedRecords.length) return this.searchResults;
+        const selectedIds = new Set(this._selectedRecords.map((r) => r.id));
+        return this.searchResults.filter((r) => !selectedIds.has(r.id));
+    }
+
+    // Exclude already-selected records from modal results
+    get filteredModalSearchResults() {
+        if (!this.isMultiSelect || !this._selectedRecords.length) return this.modalSearchResults;
+        const selectedIds = new Set(this._selectedRecords.map((r) => r.id));
+        return this.modalSearchResults.filter((r) => !selectedIds.has(r.id));
+    }
+
     get showNoResults() {
-        return !this.isLoading && this.searchResults.length === 0 && this.isSearchDropdownOpen;
+        return !this.isLoading && this.filteredSearchResults.length === 0 && this.isSearchDropdownOpen;
     }
 
     // --- Dynamic Classes ---
@@ -212,6 +310,7 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
     }
 
     get placeholderText() {
+        if (this.isAtMaxSelections) return `Maximum ${this.maxSelections} selections reached`;
         if (this.placeholder) return this.placeholder;
         return `Search ${this.selectedObject.plural + "..." || "..."}`;
     }
@@ -232,7 +331,10 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
 
     get errorMessage() {
         if (this._customValidity) return this._customValidity;
-        if (this.required && !this.selectedRecord) return this.messageWhenValueMissing;
+        if (this.required) {
+            if (this.isMultiSelect && this._selectedRecords.length === 0) return this.messageWhenValueMissing;
+            if (!this.isMultiSelect && !this.selectedRecord) return this.messageWhenValueMissing;
+        }
         return null;
     }
 
@@ -254,6 +356,27 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
         if (!message) this._showError = false;
     }
 
+    // Programmatically clear all selections in multi-select mode
+    @api
+    clearAll() {
+        if (!this.isMultiSelect) return;
+        this._selectedRecords = [];
+        this._showError = false;
+        this.dispatchEvent(
+            new CustomEvent("select", {
+                detail: {
+                    action: "clear",
+                    changedRecord: null,
+                    selectedRecords: [],
+                    recordId: null,
+                    objectType: null,
+                    recordName: null,
+                    iconName: null
+                }
+            })
+        );
+    }
+
     get isSingleObject() {
         return this.objectOptions && this.objectOptions.length === 1;
     }
@@ -264,7 +387,7 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
 
     // --- Object Selector ---
     toggleObjectDropdown() {
-        if (this.disabled) return;
+        if (this.disabled || this.isObjectSwitcherLocked) return;
         this.isObjectDropdownOpen = !this.isObjectDropdownOpen;
         if (this.isObjectDropdownOpen) {
             this.isSearchDropdownOpen = false;
@@ -325,7 +448,7 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
 
     // --- Search Logic ---
     handleSearchFocus() {
-        if (this.disabled || this.isCreatingRecord) return;
+        if (this.disabled || this.isCreatingRecord || this.isAtMaxSelections) return;
         this.isObjectDropdownOpen = false;
         this.isSearchDropdownOpen = true;
         this._focusedIndex = -1;
@@ -495,20 +618,50 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
     }
 
     finalizeSelection(recordId, recordName, iconName) {
-        this._value = recordId;
-        this.selectedRecord = {
-            id: recordId,
-            title: recordName,
-            icon: iconName,
-            objectType: this.selectedObject.value
-        };
-        this._customValidity = "";
-        this._showError = false;
+        if (this.isMultiSelect) {
+            // Guard: already selected or at max
+            if (this._selectedRecords.find((r) => r.id === recordId)) return;
+            if (this.isAtMaxSelections) return;
 
-        this.searchTerm = "";
-        this.isSearchDropdownOpen = false;
-        this._stopPositionLoop();
-        this.dispatchSelection();
+            const newRec = { id: recordId, title: recordName, icon: iconName, objectType: this.selectedObject.value };
+            this._selectedRecords = [...this._selectedRecords, newRec];
+            this._customValidity = "";
+            this._showError = false;
+            this.searchTerm = "";
+            this.isSearchDropdownOpen = false;
+            this._stopPositionLoop();
+            this.dispatchSelection("add", newRec);
+
+            // Re-focus input so user can continue picking
+            // eslint-disable-next-line @lwc/lwc/no-async-operation
+            Promise.resolve().then(() => {
+                const input = this.refs.searchInput && this.refs.searchInput.querySelector("input");
+                if (input) input.focus();
+            });
+        } else {
+            this._value = recordId;
+            this.selectedRecord = {
+                id: recordId,
+                title: recordName,
+                icon: iconName,
+                objectType: this.selectedObject.value
+            };
+            this._customValidity = "";
+            this._showError = false;
+
+            this.searchTerm = "";
+            this.isSearchDropdownOpen = false;
+            this._stopPositionLoop();
+            this.dispatchSelection(null, null);
+        }
+    }
+
+    handlePillRemove(event) {
+        const recordId = event.target.name;
+        const removed = this._selectedRecords.find((r) => r.id === recordId);
+        if (!removed) return;
+        this._selectedRecords = this._selectedRecords.filter((r) => r.id !== recordId);
+        this.dispatchSelection("remove", removed);
     }
 
     handleClearSelection() {
@@ -517,7 +670,7 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
         this._value = null;
         this._showError = false;
         this.showSelectionHelp = false;
-        this.dispatchSelection();
+        this.dispatchSelection(null, null);
 
         setTimeout(() => {
             const searchInput = this.template.querySelector("input.slds-combobox__input");
@@ -625,15 +778,27 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
         });
     }
 
-    dispatchSelection() {
-        const selectEvent = new CustomEvent("select", {
-            detail: {
+    dispatchSelection(action, changedRecord) {
+        let detail;
+        if (this.isMultiSelect) {
+            detail = {
+                action,
+                changedRecord,
+                selectedRecords: [...this._selectedRecords],
+                // Backwards-compat fields — populated on 'add', null on 'remove'/'clear'
+                recordId: action === "add" ? changedRecord.id : null,
+                objectType: action === "add" ? changedRecord.objectType : null,
+                recordName: action === "add" ? changedRecord.title : null,
+                iconName: action === "add" ? changedRecord.icon : null
+            };
+        } else {
+            detail = {
                 recordId: this.selectedRecord ? this.selectedRecord.id : null,
                 objectType: this.selectedRecord ? this.selectedRecord.objectType : null,
                 recordName: this.selectedRecord ? this.selectedRecord.title : null,
                 iconName: this.selectedRecord ? this.selectedRecord.icon : null
-            }
-        });
-        this.dispatchEvent(selectEvent);
+            };
+        }
+        this.dispatchEvent(new CustomEvent("select", { detail }));
     }
 }

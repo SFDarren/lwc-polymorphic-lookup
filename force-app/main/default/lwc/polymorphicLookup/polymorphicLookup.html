@@ -11,13 +11,32 @@
             </template>
         </label>
         <div class="slds-form-element__control">
-            <template if:false={isSelectionMade}>
+
+            <!-- [1] Multi-select pill container — shown above the search input -->
+            <template lwc:if={showPillContainer}>
+                <div class="poly-pill-container slds-m-bottom_xx-small">
+                    <template for:each={_selectedRecords} for:item="pill">
+                        <lightning-pill
+                            key={pill.id}
+                            label={pill.title}
+                            name={pill.id}
+                            onremove={handlePillRemove}>
+                            <template lwc:if={showObjectIconOnPills}>
+                                <lightning-icon slot="media" icon-name={pill.icon} size="x-small"></lightning-icon>
+                            </template>
+                        </lightning-pill>
+                    </template>
+                </div>
+            </template>
+
+            <!-- [2] Search input group — always visible in multi-select, hidden after pick in single-select -->
+            <template lwc:if={isInputVisible}>
                 <div class="slds-combobox-group">
                     <template if:false={isSingleObject}>
                         <div class="slds-combobox_object-switcher slds-combobox-addon_start">
                             <div class={objectDropdownClass} aria-expanded={isObjectDropdownOpen} aria-haspopup="listbox" role="combobox" onfocusout={handleObjectBlur}>
                                 <div class="slds-combobox__form-element slds-input-has-icon slds-input-has-icon_right object-switcher-trigger" role="none" onclick={toggleObjectDropdown}>
-                                    <button type="button" class="slds-input_faux slds-combobox__input object-switcher-btn" aria-controls="object-switcher-listbox" aria-label="Select object type">
+                                    <button type="button" class="slds-input_faux slds-combobox__input object-switcher-btn" aria-controls="object-switcher-listbox" aria-label="Select object type" disabled={isObjectSwitcherLocked}>
                                         <span class="slds-truncate">
                                             <lightning-icon icon-name={selectedObject.iconName} size="small" class="slds-icon-text-default slds-m-right_x-small"></lightning-icon>
                                         </span>
@@ -59,7 +78,7 @@
                                     aria-expanded={isSearchDropdownOpen}
                                     placeholder={placeholderText}
                                     value={searchTerm}
-                                    disabled={disabled}
+                                    disabled={isSearchInputDisabled}
                                     onfocus={handleSearchFocus}
                                     onblur={handleSearchBlur}
                                     oninput={handleSearchInput}
@@ -80,7 +99,7 @@
                             <div lwc:ref="fixedOffsetAnchor" style="position: fixed; top: 0; left: 0; visibility: hidden; pointer-events: none"></div>
                             <div lwc:ref="recordListbox" id="record-listbox" class="slds-dropdown slds-dropdown_fluid" role="listbox" style={dropdownStyle}>
                                 <ul class="slds-listbox slds-listbox_vertical" role="presentation">
-                                    <template for:each={searchResults} for:item="rec">
+                                    <template for:each={filteredSearchResults} for:item="rec">
                                         <li
                                             key={rec.id}
                                             role="presentation"
@@ -153,14 +172,15 @@
                         </div>
                         <div class="slds-assistive-text" aria-live="polite" aria-atomic="true">
                             <template lwc:if={isSearchDropdownOpen}>
-                                {searchResults.length} results available
+                                {filteredSearchResults.length} results available
                             </template>
                         </div>
                     </div>
                 </div>
             </template>
 
-            <template if:true={isSelectionMade}>
+            <!-- [3] Single-select selection display — replaces the search input after a pick -->
+            <template lwc:if={showSingleSelectPill}>
                 <div class={selectionContainerClass}>
                     <div class="slds-combobox slds-dropdown-trigger slds-dropdown-trigger_click">
                         <div class="slds-combobox__form-element slds-input-has-icon slds-input-has-icon_left-right" role="none">
@@ -195,6 +215,7 @@
                     To remove the selected record, press Backspace or Del.
                 </div>
             </template>
+
         </div>
 
         <template lwc:if={_showError}>
@@ -220,7 +241,7 @@
                     </div>
 
                     <div if:false={isModalLoading} style="height: 300px">
-                        <lightning-datatable key-field="id" data={modalSearchResults} columns={modalColumns} hide-checkbox-column onrowaction={handleModalRowAction}> </lightning-datatable>
+                        <lightning-datatable key-field="id" data={filteredModalSearchResults} columns={modalColumns} hide-checkbox-column onrowaction={handleModalRowAction}> </lightning-datatable>
                     </div>
                 </div>
                 <div class="slds-modal__footer">
