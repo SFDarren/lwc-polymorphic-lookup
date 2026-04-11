@@ -48,6 +48,9 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
     @track searchTerm = "";
     @track selectedRecord = null;
 
+    _customValidity = "";
+    _showError = false;
+
     isObjectDropdownOpen = false;
     isSearchDropdownOpen = false;
     isLoading = false;
@@ -216,6 +219,34 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
         return this.variant === "label-hidden"
             ? "slds-form-element__label slds-assistive-text"
             : "slds-form-element__label";
+    }
+
+    get formElementClass() {
+        return `slds-form-element${this._showError && this.errorMessage ? " slds-has-error" : ""}`;
+    }
+
+    get errorMessage() {
+        if (this._customValidity) return this._customValidity;
+        if (this.required && !this.selectedRecord) return this.messageWhenValueMissing;
+        return null;
+    }
+
+    @api
+    checkValidity() {
+        return !this.errorMessage;
+    }
+
+    @api
+    reportValidity() {
+        const valid = this.checkValidity();
+        this._showError = !valid;
+        return valid;
+    }
+
+    @api
+    setCustomValidity(message) {
+        this._customValidity = message || "";
+        if (!message) this._showError = false;
     }
 
     get isSingleObject() {
@@ -418,6 +449,8 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
             icon: iconName,
             objectType: this.selectedObject.value
         };
+        this._customValidity = "";
+        this._showError = false;
 
         this.searchTerm = "";
         this.isSearchDropdownOpen = false;
@@ -429,6 +462,7 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
         if (this.disabled) return;
         this.selectedRecord = null;
         this._value = null;
+        this._showError = false;
         this.showSelectionHelp = false;
         this.dispatchSelection();
 

@@ -1,15 +1,13 @@
 <template>
-    <c-polymorphic-lookup 
+    <c-polymorphic-lookup
         label={label}
         required={required}
         object-options={computedObjectOptions}
         filter-config={computedFilterConfig}
+        show-create={showCreate}
+        dropdown-limit={dropdownLimit}
+        modal-limit={modalLimit}
+        placeholder={placeholder}
         onselect={handleLookupSelection}>
     </c-polymorphic-lookup>
-
-    <template lwc:if={errorToRender}>
-        <div class="slds-text-color_error slds-m-top_xx-small" aria-live="polite">
-            <lightning-formatted-rich-text disable-linkify value={errorToRender}></lightning-formatted-rich-text>
-        </div>
-    </template>
 </template>

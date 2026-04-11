@@ -1,6 +1,6 @@
 <!-- polymorphicLookup.html -->
 <template>
-    <div class="slds-form-element">
+    <div class={formElementClass}>
         <label if:true={label} class={labelClass}>
             <template lwc:if={required}>
                 <span style="color: red">*&nbsp;</span>
@@ -177,6 +177,12 @@
                 </div>
             </template>
         </div>
+
+        <template lwc:if={_showError}>
+            <template lwc:if={errorMessage}>
+                <p class="slds-form-element__help" aria-live="assertive" role="alert">{errorMessage}</p>
+            </template>
+        </template>
     </div>
 
     <template if:true={isModalOpen}>
