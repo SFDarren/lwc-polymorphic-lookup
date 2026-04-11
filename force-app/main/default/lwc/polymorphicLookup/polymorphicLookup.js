@@ -47,6 +47,7 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
     @track modalSearchResults = []; // Modal results
     @track searchTerm = "";
     @track selectedRecord = null;
+    @track searchError = null;
 
     _customValidity = "";
     _showError = false;
@@ -367,6 +368,8 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
         this._searchGeneration += 1;
         const generation = this._searchGeneration;
 
+        this.searchError = null; // Clear previous error
+
         // Extract specific filter for the currently selected object
         let whereClause = "";
         if (this.filterConfig && this.selectedObject.value && this.filterConfig[this.selectedObject.value]) {
@@ -394,11 +397,13 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
             .catch((error) => {
                 if (generation !== this._searchGeneration) return;
                 console.error("Error", error);
+                const message = error?.body?.message || "Search failed. Please try again.";
                 if (isModal) {
                     this.modalSearchResults = [];
                     this.isModalLoading = false;
                 } else {
                     this.searchResults = [];
+                    this.searchError = message;
                     this.isLoading = false;
                 }
             });
@@ -576,7 +581,9 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
         const selectEvent = new CustomEvent("select", {
             detail: {
                 recordId: this.selectedRecord ? this.selectedRecord.id : null,
-                objectType: this.selectedRecord ? this.selectedRecord.objectType : null
+                objectType: this.selectedRecord ? this.selectedRecord.objectType : null,
+                recordName: this.selectedRecord ? this.selectedRecord.title : null,
+                iconName: this.selectedRecord ? this.selectedRecord.icon : null
             }
         });
         this.dispatchEvent(selectEvent);

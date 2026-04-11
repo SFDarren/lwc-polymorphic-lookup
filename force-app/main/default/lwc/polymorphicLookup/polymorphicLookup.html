@@ -109,6 +109,17 @@
                                         </li>
                                     </template>
 
+                                    <template lwc:if={searchError}>
+                                        <li role="presentation" class="slds-listbox__item">
+                                            <div class="slds-media slds-listbox__option slds-listbox__option_plain slds-text-color_error" role="option">
+                                                <span class="slds-media__figure slds-listbox__option-icon">
+                                                    <lightning-icon icon-name="utility:error" size="x-small" variant="error"></lightning-icon>
+                                                </span>
+                                                <span class="slds-media__body">{searchError}</span>
+                                            </div>
+                                        </li>
+                                    </template>
+
                                     <li role="presentation" class="slds-listbox__item" onmousedown={handleShowAll} onkeydown={handleItemKeyDown} onblur={handleSearchBlur} tabindex="0" data-action="show-all">
                                         <div class="slds-media slds-listbox__option slds-listbox__option_entity slds-media_center" role="option">
                                             <span class="slds-media__figure slds-listbox__option-icon">
