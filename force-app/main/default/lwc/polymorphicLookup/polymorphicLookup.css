@@ -9,12 +9,13 @@
 .object-switcher-btn {
     display: flex;
     align-items: center;
-    height: 32px; 
+    height: 32px;
     cursor: pointer;
     padding: 0 0.5rem; /* Make room for the down arrow */
 }
 
-.slds-combobox_object-switcher .slds-combobox__input, .slds-combobox--object-switcher .slds-combobox__input {
+.slds-combobox_object-switcher .slds-combobox__input,
+.slds-combobox--object-switcher .slds-combobox__input {
     width: 4rem !important;
 }
 
@@ -39,19 +40,19 @@
     justify-content: center;
     height: 100%;
     z-index: 2;
-    padding-left: 0.5rem; 
+    padding-left: 0.5rem;
 }
 
 /* Text alignment in pill */
 .slds-combobox__input-value {
     display: flex;
     align-items: center;
-    padding-left: 2.5rem; 
+    padding-left: 2.5rem;
 }
 
 /* Manual Focus State */
 .has-focus .slds-combobox__form-element {
-    border-color: #006dcc; 
+    border-color: #006dcc;
     box-shadow: 0 0 3px #0070d2;
 }
 
@@ -85,4 +86,12 @@
 
 lightning-icon.slds-input__icon {
     pointer-events: none;
+}
+
+.single-object.slds-combobox-addon_end .slds-combobox__input,
+.single-object.slds-combobox-addon--end .slds-combobox__input {
+    border-start-end-radius: var(--slds-s-input-radius-border);
+    border-end-end-radius: var(--slds-s-input-radius-border);
+    border-start-start-radius: var(--slds-s-input-radius-border);
+    border-end-start-radius: var(--slds-s-input-radius-border);
 }

@@ -8,54 +8,55 @@
             {label}
         </label>
         <div class="slds-form-element__control">
-            
             <template if:false={isSelectionMade}>
                 <div class="slds-combobox-group">
-                    <div class="slds-combobox_object-switcher slds-combobox-addon_start">
-                        <div class={objectDropdownClass} aria-expanded={isObjectDropdownOpen} aria-haspopup="listbox" role="combobox" onfocusout={handleObjectBlur}>
-                            <div class="slds-combobox__form-element slds-input-has-icon slds-input-has-icon_right object-switcher-trigger" role="none" onclick={toggleObjectDropdown}>
-                                <button type="button" class="slds-input_faux slds-combobox__input object-switcher-btn" aria-controls="object-switcher-listbox">
-                                    <span class="slds-truncate">
-                                        <lightning-icon icon-name={selectedObject.iconName} size="small" class="slds-icon-text-default slds-m-right_x-small"></lightning-icon>
-                                    </span>
-                                </button>
-                                <lightning-icon icon-name="utility:down" size="x-small" class="slds-input__icon slds-input__icon_right"></lightning-icon>
-                            </div>
-                            
-                            <div class="slds-dropdown slds-dropdown_fluid" role="listbox">
-                                <ul class="slds-listbox slds-listbox_vertical" role="presentation">
-                                    <template for:each={objectOptions} for:item="obj">
-                                        <li key={obj.value} role="presentation" class="slds-listbox__item" data-value={obj.value} onmousedown={handleObjectSelect} tabindex="0" onkeydown={handleObjectKeyDown}>
-                                            <div class="slds-media slds-listbox__option slds-listbox__option_plain slds-media_small" role="option">
-                                                <span class="slds-media__figure slds-listbox__option-icon">
-                                                    <lightning-icon icon-name={obj.iconName} size="small" class="slds-icon-text-default"></lightning-icon>
-                                                </span>
-                                                <span class="slds-media__body">
-                                                    <span class="slds-truncate" title={obj.label}>{obj.label}</span>
-                                                </span>
-                                            </div>
-                                        </li>
-                                    </template>
-                                </ul>
+                    <template if:false={isSingleObject}>
+                        <div class="slds-combobox_object-switcher slds-combobox-addon_start">
+                            <div class={objectDropdownClass} aria-expanded={isObjectDropdownOpen} aria-haspopup="listbox" role="combobox" onfocusout={handleObjectBlur}>
+                                <div class="slds-combobox__form-element slds-input-has-icon slds-input-has-icon_right object-switcher-trigger" role="none" onclick={toggleObjectDropdown}>
+                                    <button type="button" class="slds-input_faux slds-combobox__input object-switcher-btn" aria-controls="object-switcher-listbox">
+                                        <span class="slds-truncate">
+                                            <lightning-icon icon-name={selectedObject.iconName} size="small" class="slds-icon-text-default slds-m-right_x-small"></lightning-icon>
+                                        </span>
+                                    </button>
+                                    <lightning-icon icon-name="utility:down" size="x-small" class="slds-input__icon slds-input__icon_right"></lightning-icon>
+                                </div>
+
+                                <div class="slds-dropdown slds-dropdown_fluid" role="listbox">
+                                    <ul class="slds-listbox slds-listbox_vertical" role="presentation">
+                                        <template for:each={objectOptions} for:item="obj">
+                                            <li key={obj.value} role="presentation" class="slds-listbox__item" data-value={obj.value} onmousedown={handleObjectSelect} tabindex="0" onkeydown={handleObjectKeyDown}>
+                                                <div class="slds-media slds-listbox__option slds-listbox__option_plain slds-media_small" role="option">
+                                                    <span class="slds-media__figure slds-listbox__option-icon">
+                                                        <lightning-icon icon-name={obj.iconName} size="small" class="slds-icon-text-default"></lightning-icon>
+                                                    </span>
+                                                    <span class="slds-media__body">
+                                                        <span class="slds-truncate" title={obj.label}>{obj.label}</span>
+                                                    </span>
+                                                </div>
+                                            </li>
+                                        </template>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </template>
 
-                    <div class="slds-combobox_container slds-combobox-addon_end">
+                    <div class={searchContainerClass}>
                         <div class={searchDropdownClass} aria-expanded={isSearchDropdownOpen} aria-haspopup="listbox" role="combobox">
-                            <div class="slds-combobox__form-element slds-input-has-icon slds-input-has-icon_right" role="none">
-                                <input type="text" 
-                                    class="slds-input slds-combobox__input" 
-                                    aria-autocomplete="list" 
-                                    aria-controls="record-listbox" 
-                                    autocomplete="off" 
+                            <div lwc:ref="searchInput" class="slds-combobox__form-element slds-input-has-icon slds-input-has-icon_right" role="none">
+                                <input
+                                    type="text"
+                                    class="slds-input slds-combobox__input"
+                                    aria-autocomplete="list"
+                                    aria-controls="record-listbox"
+                                    autocomplete="off"
                                     role="textbox"
                                     placeholder={placeholderText}
                                     value={searchTerm}
                                     onfocus={handleSearchFocus}
                                     onblur={handleSearchBlur}
-                                    oninput={handleSearchInput}
-                                />
+                                    oninput={handleSearchInput} />
                                 <template if:true={isLoading}>
                                     <div class="slds-input__icon-group slds-input__icon-group_right">
                                         <div role="status" class="slds-spinner slds-spinner_brand slds-spinner_x-small slds-input__spinner">
@@ -69,73 +70,67 @@
                                     <lightning-icon icon-name="utility:search" size="x-small" class="slds-input__icon slds-input__icon_right"></lightning-icon>
                                 </template>
                             </div>
-
-                            <div id="record-listbox" class="slds-dropdown slds-dropdown_fluid" role="listbox">
+                            <div lwc:ref="fixedOffsetAnchor" style="position: fixed; top: 0; left: 0; visibility: hidden; pointer-events: none"></div>
+                            <div lwc:ref="recordListbox" id="record-listbox" class="slds-dropdown slds-dropdown_fluid" role="listbox" style={dropdownStyle}>
                                 <ul class="slds-listbox slds-listbox_vertical" role="presentation">
-    <template for:each={searchResults} for:item="rec">
-        <li key={rec.id} 
-            role="presentation" 
-            class="slds-listbox__item" 
-            onmousedown={handleRecordSelect} 
-            onkeydown={handleItemKeyDown}
-            onblur={handleSearchBlur}
-            tabindex="0" 
-            data-id={rec.id} 
-            data-title={rec.title} 
-            data-icon={rec.icon}>
-            
-            <div class="slds-media slds-listbox__option slds-listbox__option_entity slds-media_center" role="option">
-                <span class="slds-media__figure slds-listbox__option-icon">
-                    <lightning-icon icon-name={rec.icon} size="small"></lightning-icon>
-                </span>
-                <span class="slds-media__body">
-                    <span class="slds-listbox__option-text slds-listbox__option-text_entity">{rec.title}</span>
-                    <span class="slds-listbox__option-meta slds-listbox__option-meta_entity">{rec.subtitle}</span>
-                </span>
-            </div>
-        </li>
-    </template>
-    
-    <template if:true={showNoResults}>
-        <li role="presentation" class="slds-listbox__item">
-            <div class="slds-media slds-listbox__option slds-listbox__option_plain" role="option">
-                <span class="slds-media__body">No results found...</span>
-            </div>
-        </li>
-    </template>
+                                    <template for:each={searchResults} for:item="rec">
+                                        <li
+                                            key={rec.id}
+                                            role="presentation"
+                                            class="slds-listbox__item"
+                                            onmousedown={handleRecordSelect}
+                                            onkeydown={handleItemKeyDown}
+                                            onblur={handleSearchBlur}
+                                            tabindex="0"
+                                            data-id={rec.id}
+                                            data-title={rec.title}
+                                            data-icon={rec.icon}>
+                                            <div class="slds-media slds-listbox__option slds-listbox__option_entity slds-media_center" role="option">
+                                                <span class="slds-media__figure slds-listbox__option-icon">
+                                                    <lightning-icon icon-name={rec.icon} size="small"></lightning-icon>
+                                                </span>
+                                                <span class="slds-media__body">
+                                                    <span class="slds-listbox__option-text slds-listbox__option-text_entity">{rec.title}</span>
+                                                    <span class="slds-listbox__option-meta slds-listbox__option-meta_entity">{rec.subtitle}</span>
+                                                </span>
+                                            </div>
+                                        </li>
+                                    </template>
 
-    <li role="presentation" class="slds-listbox__item" 
-        onmousedown={handleShowAll} 
-        onkeydown={handleItemKeyDown} 
-        onblur={handleSearchBlur}
-        tabindex="0"
-        data-action="show-all"> <div class="slds-media slds-listbox__option slds-listbox__option_entity slds-media_center" role="option">
-            <span class="slds-media__figure slds-listbox__option-icon">
-                <lightning-icon icon-name="utility:search" size="x-small"></lightning-icon>
-            </span>
-            <span class="slds-media__body">
-                <span class="slds-listbox__option-text" style="font-weight: 700;">Show All Results for "{searchTerm}"</span>
-            </span>
-        </div>
-    </li>
+                                    <template if:true={showNoResults}>
+                                        <li role="presentation" class="slds-listbox__item">
+                                            <div class="slds-media slds-listbox__option slds-listbox__option_plain" role="option">
+                                                <span class="slds-media__body">No results found...</span>
+                                            </div>
+                                        </li>
+                                    </template>
 
-    <li role="presentation" class="slds-listbox__item" 
-        onmousedown={handleNewRecord} 
-        onkeydown={handleItemKeyDown} 
-        onblur={handleSearchBlur}
-        tabindex="0"
-        data-action="new-record"> <div class="slds-media slds-listbox__option slds-listbox__option_entity slds-media_center" role="option">
-            <span class="slds-media__figure slds-listbox__option-icon">
-                <div class="slds-icon_container slds-icon-utility-add slds-current-color">
-                    <lightning-icon icon-name="utility:add" size="x-small"></lightning-icon>
-                </div>
-            </span>
-            <span class="slds-media__body">
-                <span class="slds-listbox__option-text slds-listbox__option-text_entity">New {selectedObject.label}</span>
-            </span>
-        </div>
-    </li>
-</ul>
+                                    <li role="presentation" class="slds-listbox__item" onmousedown={handleShowAll} onkeydown={handleItemKeyDown} onblur={handleSearchBlur} tabindex="0" data-action="show-all">
+                                        <div class="slds-media slds-listbox__option slds-listbox__option_entity slds-media_center" role="option">
+                                            <span class="slds-media__figure slds-listbox__option-icon">
+                                                <lightning-icon icon-name="utility:search" size="x-small"></lightning-icon>
+                                            </span>
+                                            <span class="slds-media__body">
+                                                <span class="slds-listbox__option-text" style="font-weight: 700">Show All Results for "{searchTerm}"</span>
+                                            </span>
+                                        </div>
+                                    </li>
+
+                                    <template lwc:if={showCreate}>
+                                        <li role="presentation" class="slds-listbox__item" onmousedown={handleNewRecord} onkeydown={handleItemKeyDown} onblur={handleSearchBlur} tabindex="0" data-action="new-record">
+                                            <div class="slds-media slds-listbox__option slds-listbox__option_entity slds-media_center" role="option">
+                                                <span class="slds-media__figure slds-listbox__option-icon">
+                                                    <div class="slds-icon_container slds-icon-utility-add slds-current-color">
+                                                        <lightning-icon icon-name="utility:add" size="x-small"></lightning-icon>
+                                                    </div>
+                                                </span>
+                                                <span class="slds-media__body">
+                                                    <span class="slds-listbox__option-text slds-listbox__option-text_entity">New {selectedObject.label}</span>
+                                                </span>
+                                            </div>
+                                        </li>
+                                    </template>
+                                </ul>
                             </div>
                         </div>
                     </div>
@@ -150,13 +145,17 @@
                                 <lightning-icon icon-name={selectedRecord.icon} size="small"></lightning-icon>
                                 <span class="slds-assistive-text">{selectedRecord.objectType}</span>
                             </span>
-                            
-                            <div role="combobox" tabindex="0" 
-                                 class="slds-input_faux slds-combobox__input slds-combobox__input-value" 
-                                 aria-labelledby="combobox-label-id-134" aria-expanded="false" aria-haspopup="listbox"
-                                 onfocus={handleSelectionFocus}
-                                 onblur={handleSelectionBlur}
-                                 onkeydown={handleSelectionKeydown}>
+
+                            <div
+                                role="combobox"
+                                tabindex="0"
+                                class="slds-input_faux slds-combobox__input slds-combobox__input-value"
+                                aria-labelledby="combobox-label-id-134"
+                                aria-expanded="false"
+                                aria-haspopup="listbox"
+                                onfocus={handleSelectionFocus}
+                                onblur={handleSelectionBlur}
+                                onkeydown={handleSelectionKeydown}>
                                 <span class="slds-truncate">{selectedRecord.title}</span>
                             </div>
 
@@ -167,13 +166,12 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div if:true={showSelectionHelp} class="slds-form-element__help" aria-live="polite">
                     <lightning-icon icon-name="utility:info" size="xx-small" class="slds-m-right_xx-small"></lightning-icon>
                     To remove the selected record, press Backspace or Del.
                 </div>
             </template>
-
         </div>
     </div>
 
@@ -188,18 +186,12 @@
                     <h1 id="modal-heading-01" class="slds-modal__title slds-hyphenate">{selectedObject.plural} Results</h1>
                 </div>
                 <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
-                    <div if:true={isModalLoading} class="slds-is-relative" style="height: 200px;">
+                    <div if:true={isModalLoading} class="slds-is-relative" style="height: 200px">
                         <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
                     </div>
 
-                    <div if:false={isModalLoading} style="height: 300px;">
-                        <lightning-datatable
-                            key-field="id"
-                            data={modalSearchResults}
-                            columns={modalColumns}
-                            hide-checkbox-column
-                            onrowaction={handleModalRowAction}>
-                        </lightning-datatable>
+                    <div if:false={isModalLoading} style="height: 300px">
+                        <lightning-datatable key-field="id" data={modalSearchResults} columns={modalColumns} hide-checkbox-column onrowaction={handleModalRowAction}> </lightning-datatable>
                     </div>
                 </div>
                 <div class="slds-modal__footer">

@@ -1,48 +1,103 @@
-/* polymorphicLookup.js */
-import { LightningElement, api, track } from 'lwc';
-import { NavigationMixin } from 'lightning/navigation';
-import searchRecords from '@salesforce/apex/PolymorphicLookupController.searchRecords';
-import getLatestCreatedRecord from '@salesforce/apex/PolymorphicLookupController.getLatestCreatedRecord';
+/* polymorphicLookup.js 
+ * date: 10 Apr 2026 
+ * author: Darren Seet
+ * */
+import { LightningElement, api, track } from "lwc";
+import { NavigationMixin } from "lightning/navigation";
+import searchRecords from "@salesforce/apex/PolymorphicLookupController.searchRecords";
+import getLatestCreatedRecord from "@salesforce/apex/PolymorphicLookupController.getLatestCreatedRecord";
 import userId from "@salesforce/user/Id";
 
 export default class PolymorphicLookup extends NavigationMixin(LightningElement) {
-    @api label = 'Related To';
-    @api objectOptions = []; 
+    @api label = "Related To";
+    @api objectOptions = [];
     @api required = false;
     // NEW: Accepts a generic object/map: { 'Account': "Sales_Org__c = '123'", ... }
     @api filterConfig = {};
+    @api showCreate;
 
     @track selectedObject = {};
     @track searchResults = []; // Dropdown results
     @track modalSearchResults = []; // Modal results
-    @track searchTerm = '';
+    @track searchTerm = "";
     @track selectedRecord = null;
-    
+
     isObjectDropdownOpen = false;
     isSearchDropdownOpen = false;
     isLoading = false;
     isModalOpen = false; // Controls the "Show All" modal
     isModalLoading = false;
     isCreatingRecord = false;
-    
-    showSelectionHelp = false; 
+
+    showSelectionHelp = false;
     searchThrottlingTimeout;
+    _searchGeneration = 0;
 
     // Configuration for the Modal Datatable
     // using 'button' type with 'base' variant looks like a text link
     get modalColumns() {
         return [
-            { 
-                label: 'Name', 
-                type: 'button', 
-                typeAttributes: { 
-                    label: { fieldName: 'title' }, 
-                    variant: 'base',
-                    name: 'select_record' 
-                } 
+            {
+                label: "Name",
+                type: "button",
+                typeAttributes: {
+                    label: { fieldName: "title" },
+                    variant: "base",
+                    name: "select_record"
+                }
             },
-            { label: this.selectedObject.subtitleField || 'Info', fieldName: 'subtitle' }
+            { label: this.selectedObject.subtitleField || "Info", fieldName: "subtitle" }
         ];
+    }
+
+    dropdownStyle = "";
+    _rafId = null;
+
+    _startPositionLoop() {
+        if (this._rafId) return;
+        const tick = () => {
+            this._calculateDropdownPosition();
+            if (this.isSearchDropdownOpen) {
+                this._rafId = requestAnimationFrame(tick);
+            } else {
+                this._rafId = null;
+            }
+        };
+        this._rafId = requestAnimationFrame(tick);
+    }
+
+    _stopPositionLoop() {
+        if (this._rafId) {
+            cancelAnimationFrame(this._rafId);
+            this._rafId = null;
+        }
+    }
+
+    _calculateDropdownPosition() {
+        const inputComponent = this.refs.searchInput;
+        const anchorComponent = this.refs.fixedOffsetAnchor;
+
+        if (!inputComponent || !anchorComponent) {
+            return;
+        }
+
+        const inputRect = inputComponent.getBoundingClientRect();
+        const anchorRect = anchorComponent.getBoundingClientRect();
+
+        // The anchor is position:fixed; top:0; left:0 inside the same transformed
+        // ancestor (e.g. SLDS modal container). Its getBoundingClientRect() tells us
+        // where the fixed-position origin maps to in viewport coordinates, so we
+        // subtract it to convert viewport coords → fixed-position coords.
+        const fixedLeft = inputRect.left - anchorRect.left + inputRect.width / 2;
+        const fixedTop = inputRect.bottom - anchorRect.top;
+
+        this.dropdownStyle = `
+            position: fixed;
+            top: ${fixedTop}px;
+            left: ${fixedLeft}px;
+            width: ${inputRect.width}px;
+            z-index: 9999;
+        `;
     }
 
     connectedCallback() {
@@ -51,26 +106,46 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
         }
     }
 
+    disconnectedCallback() {
+        this._stopPositionLoop();
+        if (this.locationHrefPoll) {
+            clearInterval(this.locationHrefPoll);
+            this.locationHrefPoll = null;
+        }
+    }
+
     get isSelectionMade() {
         return !!this.selectedRecord;
     }
 
+    get showNoResults() {
+        return !this.isLoading && this.searchResults.length === 0 && this.isSearchDropdownOpen;
+    }
+
     // --- Dynamic Classes ---
     get objectDropdownClass() {
-        return `slds-combobox slds-dropdown-trigger slds-dropdown-trigger_click ${this.isObjectDropdownOpen ? 'slds-is-open' : ''}`;
+        return `slds-combobox slds-dropdown-trigger slds-dropdown-trigger_click ${this.isObjectDropdownOpen ? "slds-is-open" : ""}`;
     }
 
     get searchDropdownClass() {
         const isOpen = this.isSearchDropdownOpen && !this.isCreatingRecord;
-        return `slds-combobox slds-dropdown-trigger slds-dropdown-trigger_click ${isOpen ? 'slds-is-open' : ''}`;
+        return `slds-combobox slds-dropdown-trigger slds-dropdown-trigger_click ${isOpen ? "slds-is-open" : ""}`;
     }
 
     get selectionContainerClass() {
-        return `slds-combobox_container slds-has-selection ${this.showSelectionHelp ? 'has-focus' : ''}`;
+        return `slds-combobox_container slds-has-selection ${this.showSelectionHelp ? "has-focus" : ""}`;
     }
 
     get placeholderText() {
-        return `Search ${this.selectedObject.plural + '...' || '...'}`;
+        return `Search ${this.selectedObject.plural + "..." || "..."}`;
+    }
+
+    get isSingleObject() {
+        return this.objectOptions && this.objectOptions.length === 1;
+    }
+
+    get searchContainerClass() {
+        return this.isSingleObject ? "single-object slds-combobox_container slds-combobox-addon_end" : "slds-combobox_container slds-combobox-addon_end"; // merged border (right side only)
     }
 
     // --- Object Selector ---
@@ -83,15 +158,15 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
 
     handleObjectSelect(event) {
         const selectedValue = event.currentTarget.dataset.value;
-        this.selectedObject = this.objectOptions.find(opt => opt.value === selectedValue);
+        this.selectedObject = this.objectOptions.find((opt) => opt.value === selectedValue);
         this.isObjectDropdownOpen = false;
-        
-        this.searchTerm = '';
+
+        this.searchTerm = "";
         this.searchResults = [];
         this.isSearchDropdownOpen = false;
-        
+
         setTimeout(() => {
-            const searchInput = this.template.querySelector('input.slds-combobox__input');
+            const searchInput = this.template.querySelector("input.slds-combobox__input");
             if (searchInput) {
                 searchInput.focus();
             }
@@ -99,19 +174,19 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
     }
 
     handleObjectKeyDown(event) {
-        if (event.key === 'Enter') {
+        if (event.key === "Enter") {
             event.preventDefault();
-            
+
             const selectedValue = event.currentTarget.dataset.value;
-            this.selectedObject = this.objectOptions.find(opt => opt.value === selectedValue);
+            this.selectedObject = this.objectOptions.find((opt) => opt.value === selectedValue);
             this.isObjectDropdownOpen = false;
-            
-            this.searchTerm = '';
+
+            this.searchTerm = "";
             this.searchResults = [];
             this.isSearchDropdownOpen = false;
-            
+
             setTimeout(() => {
-                const searchInput = this.template.querySelector('input.slds-combobox__input');
+                const searchInput = this.template.querySelector("input.slds-combobox__input");
                 if (searchInput) {
                     searchInput.focus();
                 }
@@ -123,7 +198,7 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
         // 1. Check where the focus is going next
         const nextFocusedElement = event.relatedTarget;
 
-        // 2. If the user clicked inside the component (e.g., clicked the scrollbar, 
+        // 2. If the user clicked inside the component (e.g., clicked the scrollbar,
         //    or tabbed to an item in the list), DO NOT close.
         if (nextFocusedElement && this.template.contains(nextFocusedElement)) {
             return;
@@ -135,9 +210,11 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
 
     // --- Search Logic ---
     handleSearchFocus() {
-        if(this.isCreatingRecord) return;
+        if (this.isCreatingRecord) return;
         this.isObjectDropdownOpen = false;
         this.isSearchDropdownOpen = true;
+        this._calculateDropdownPosition();
+        this._startPositionLoop();
         this.performSearch(5); // Limit 5 for dropdown
     }
 
@@ -153,12 +230,14 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
 
         // Only close if we are truly leaving the component
         this.isSearchDropdownOpen = false;
+        this._stopPositionLoop();
     }
 
     handleSearchInput(event) {
         this.searchTerm = event.target.value;
         this.isSearchDropdownOpen = true;
-        
+        this._calculateDropdownPosition();
+
         if (this.searchThrottlingTimeout) {
             clearTimeout(this.searchThrottlingTimeout);
         }
@@ -174,51 +253,57 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
         if (isModal) this.isModalLoading = true;
         else this.isLoading = true;
 
-        // NEW: Extract specific filter for the currently selected object
-        let whereClause = '';
+        // Race condition guard: discard stale responses
+        this._searchGeneration += 1;
+        const generation = this._searchGeneration;
+
+        // Extract specific filter for the currently selected object
+        let whereClause = "";
         if (this.filterConfig && this.selectedObject.value && this.filterConfig[this.selectedObject.value]) {
             whereClause = this.filterConfig[this.selectedObject.value];
         }
 
-        searchRecords({ 
-            objectApiName: this.selectedObject.value, 
+        searchRecords({
+            objectApiName: this.selectedObject.value,
             searchKey: this.searchTerm,
             iconName: this.selectedObject.iconName,
             subtitleField: this.selectedObject.subtitleField,
-            whereClause: whereClause, // Pass the filter to Apex
+            whereClause: whereClause,
             queryLimit: limitSize
         })
-        .then(results => {
-            if (isModal) {
-                this.modalSearchResults = results;
-                this.isModalLoading = false;
-            } else {
-                this.searchResults = results;
-                this.isLoading = false;
-            }
-        })
-        .catch(error => {
-            console.error('Error', error);
-            if (isModal) {
-                this.modalSearchResults = [];
-                this.isModalLoading = false;
-            } else {
-                this.searchResults = [];
-                this.isLoading = false;
-            }
-        });
+            .then((results) => {
+                if (generation !== this._searchGeneration) return; // stale response
+                if (isModal) {
+                    this.modalSearchResults = results;
+                    this.isModalLoading = false;
+                } else {
+                    this.searchResults = results;
+                    this.isLoading = false;
+                }
+            })
+            .catch((error) => {
+                if (generation !== this._searchGeneration) return;
+                console.error("Error", error);
+                if (isModal) {
+                    this.modalSearchResults = [];
+                    this.isModalLoading = false;
+                } else {
+                    this.searchResults = [];
+                    this.isLoading = false;
+                }
+            });
     }
 
     // --- Modal Logic ("Show All") ---
     handleShowAll(event) {
         // Prevent blur from closing the dropdown too early
-        if(event) event.preventDefault();
-        
+        if (event) event.preventDefault();
+
         this.isSearchDropdownOpen = false;
         this.isModalOpen = true;
-        
+
         // Fetch more results for the datatable
-        this.performSearch(50); 
+        this.performSearch(50);
     }
 
     handleCloseModal() {
@@ -229,7 +314,7 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
         const actionName = event.detail.action.name;
         const row = event.detail.row;
 
-        if (actionName === 'select_record') {
+        if (actionName === "select_record") {
             // Mimic the structure of handleRecordSelect
             this.finalizeSelection(row.id, row.title, row.icon);
             this.isModalOpen = false;
@@ -238,7 +323,7 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
 
     // --- Selection Actions ---
     handleRecordSelect(event) {
-        event.preventDefault(); 
+        event.preventDefault();
         const recordId = event.currentTarget.dataset.id;
         const recordName = event.currentTarget.dataset.title;
         const iconName = event.currentTarget.dataset.icon;
@@ -254,8 +339,9 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
             objectType: this.selectedObject.value
         };
 
-        this.searchTerm = '';
+        this.searchTerm = "";
         this.isSearchDropdownOpen = false;
+        this._stopPositionLoop();
         this.dispatchSelection();
     }
 
@@ -265,7 +351,7 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
         this.dispatchSelection();
 
         setTimeout(() => {
-            const searchInput = this.template.querySelector('input.slds-combobox__input');
+            const searchInput = this.template.querySelector("input.slds-combobox__input");
             if (searchInput) {
                 searchInput.focus();
             }
@@ -282,38 +368,36 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
     }
 
     handleSelectionKeydown(event) {
-        if (event.key === 'Backspace' || event.key === 'Delete') {
+        if (event.key === "Backspace" || event.key === "Delete") {
             event.preventDefault();
             this.handleClearSelection();
         }
     }
 
     handleItemKeyDown(event) {
-        if (event.key === 'Enter') {
+        if (event.key === "Enter") {
             event.preventDefault();
-            
+
             // Check for specific actions based on data attributes or dataset
             const action = event.currentTarget.dataset.action;
 
-            if (action === 'show-all') {
+            if (action === "show-all") {
                 this.handleShowAll();
-            } else if (action === 'new-record') {
+            } else if (action === "new-record") {
                 this.handleNewRecord(event);
             } else {
                 // It is a standard record selection
                 const recordId = event.currentTarget.dataset.id;
                 const recordName = event.currentTarget.dataset.title;
                 const iconName = event.currentTarget.dataset.icon;
-                
+
                 this.finalizeSelection(recordId, recordName, iconName);
             }
         }
     }
 
-    
-
-    initialLocationHref
-    locationHrefPoll
+    initialLocationHref;
+    locationHrefPoll;
     handleNewRecord(event) {
         event.preventDefault();
         this.isCreatingRecord = true;
@@ -325,55 +409,56 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
         this.locationHrefPoll = setInterval(() => {
             if (hrefHasChanged && this.initialLocationHref == window.location.href) {
                 // means popup was launched and closed
-                clearInterval(this.locationHrefPoll)
+                clearInterval(this.locationHrefPoll);
                 this.locationHrefPoll = null;
 
                 this.isLoading = true;
                 // query record created by user in the last 30 seconds?
-                getLatestCreatedRecord({ 
-                    objectApiName: this.selectedObject.value, 
+                getLatestCreatedRecord({
+                    objectApiName: this.selectedObject.value,
                     iconName: this.selectedObject.iconName,
                     userId: userId
-                }).then(results => {
-                    console.log('results: ', JSON.stringify(results, null, 2))
-                    if (results.length != 0) {
-                        const result = results[0];
-                        this.finalizeSelection(result.id, result.title, this.selectedObject.iconName);
-                    }
-                }).catch(error => {
-                    console.log('fail silently since this is just default error: ', JSON.stringify(error, null, 2))
-                }).finally(() => {
-                    this.isLoading = false;
-                    this.isCreatingRecord = false;
                 })
+                    .then((results) => {
+                        console.log("results: ", JSON.stringify(results, null, 2));
+                        if (results.length != 0) {
+                            const result = results[0];
+                            this.finalizeSelection(result.id, result.title, this.selectedObject.iconName);
+                        }
+                    })
+                    .catch((error) => {
+                        console.log("fail silently since this is just default error: ", JSON.stringify(error, null, 2));
+                    })
+                    .finally(() => {
+                        this.isLoading = false;
+                        this.isCreatingRecord = false;
+                    });
             } else {
                 if (this.initialLocationHref != window.location.href) {
                     hrefHasChanged = true;
                 }
             }
-        }, 500)
+        }, 500);
 
         this[NavigationMixin.Navigate]({
-            type: 'standard__objectPage',
+            type: "standard__objectPage",
             attributes: {
                 objectApiName: this.selectedObject.value,
-                actionName: 'new'
+                actionName: "new"
             },
-            state : {
-                count: '1',
-                nooverride: '1',
-                useRecordTypeCheck : '1',
-                navigationLocation: 'RELATED_LIST' // this will make it stay in current record page after closed
+            state: {
+                count: "1",
+                nooverride: "1",
+                useRecordTypeCheck: "1",
+                navigationLocation: "RELATED_LIST" // this will make it stay in current record page after closed
             }
         });
-
-        
     }
 
     dispatchSelection() {
-        const selectEvent = new CustomEvent('select', {
-            detail: { 
-                recordId: this.selectedRecord ? this.selectedRecord.id : null, 
+        const selectEvent = new CustomEvent("select", {
+            detail: {
+                recordId: this.selectedRecord ? this.selectedRecord.id : null,
                 objectType: this.selectedRecord ? this.selectedRecord.objectType : null
             }
         });

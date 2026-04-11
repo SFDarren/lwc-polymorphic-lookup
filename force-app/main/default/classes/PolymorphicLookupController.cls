@@ -69,18 +69,19 @@ public with sharing class PolymorphicLookupController {
     @AuraEnabled
     public static List<LookupRecord> getLatestCreatedRecord(String objectApiName, String iconName, String userId) {
         String safeObject = String.escapeSingleQuotes(objectApiName);
-        
+
         // Calculate time
-        Datetime withinTime = Datetime.now().addSeconds(-10);
+        Datetime withinTime = Datetime.now().addSeconds(-30);
 
         // Bind Map
         Map<String, Object> bindParams = new Map<String, Object>{
-            'withinTime' => withinTime
+            'withinTime' => withinTime,
+            'userId' => userId
         };
 
-        String query = 'SELECT Id, Name FROM ' + safeObject + 
-                       ' WHERE CreatedDate >= :withinTime ORDER BY CreatedDate DESC LIMIT 1';
-        
+        String query = 'SELECT Id, Name FROM ' + safeObject +
+                       ' WHERE CreatedDate >= :withinTime AND CreatedById = :userId ORDER BY CreatedDate DESC LIMIT 1';
+
         return executeQueryWithBinds(query, bindParams, safeObject, iconName, null);
     }
 
