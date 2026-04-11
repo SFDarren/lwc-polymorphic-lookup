@@ -3,75 +3,69 @@ import { LightningElement, track } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 
 export default class ParentComponent extends LightningElement {
-    
-    @track selectionLog = [];
 
-    // Configuration for the Object Dropdown
-    supportedObjects = [
-        { 
-            label: 'Opportunity', 
-            plural: 'Opportunities', 
-            value: 'Opportunity', 
-            iconName: 'standard:opportunity',
-            subtitleField: 'StageName' 
-        },
-        { 
-            label: 'Account', 
-            plural: 'Accounts', 
-            value: 'Account', 
-            iconName: 'standard:account',
-            subtitleField: 'Phone' // Changed to phone for better demo data
-        },
-        { 
-            label: 'Contact', 
-            plural: 'Contacts', 
-            value: 'Contact', 
-            iconName: 'standard:contact',
-            subtitleField: 'Email' 
-        },
-        { 
-            label: 'Case', 
-            plural: 'Cases', 
-            value: 'Case', 
-            iconName: 'standard:case',
-            subtitleField: 'Status' 
-        }
+    @track selectionLog = [];
+    @track isDisabled = false;
+
+    // ── Example 1: Multi-object with per-object SOQL filters ──────────────
+    multiObjectOptions = [
+        { label: 'Account',     plural: 'Accounts',      value: 'Account',     iconName: 'standard:account',     subtitleField: 'Phone' },
+        { label: 'Contact',     plural: 'Contacts',      value: 'Contact',     iconName: 'standard:contact',     subtitleField: 'Email' },
+        { label: 'Opportunity', plural: 'Opportunities', value: 'Opportunity', iconName: 'standard:opportunity', subtitleField: 'StageName' },
+        { label: 'Case',        plural: 'Cases',         value: 'Case',        iconName: 'standard:case',        subtitleField: 'Status' }
     ];
 
-    get filterConfiguration() {
+    get multiObjectFilter() {
         return {
-            // Updated to be a bit looser so you definitely get results in your screenshot
-            'Account': "CreatedDate >= LAST_N_DAYS:30", 
-            'Opportunity': "IsWon = true"
+            Account: "CreatedDate >= LAST_N_DAYS:365",
+            Opportunity: "IsWon = true"
         };
     }
 
+    // ── Example 2: Single object — Account only, showCreate + fieldLevelHelp ─
+    singleObjectOptions = [
+        { label: 'Account', plural: 'Accounts', value: 'Account', iconName: 'standard:account', subtitleField: 'Phone' }
+    ];
+
+    // ── Example 3: Required field — validation demo ────────────────────────
+    requiredObjectOptions = [
+        { label: 'Contact', plural: 'Contacts', value: 'Contact', iconName: 'standard:contact', subtitleField: 'Email' },
+        { label: 'Lead',    plural: 'Leads',    value: 'Lead',    iconName: 'standard:lead',    subtitleField: 'Company' }
+    ];
+
+    handleCheckValidity() {
+        const lookup = this.template.querySelector('[data-id="required-lookup"]');
+        const isValid = lookup ? lookup.reportValidity() : true;
+        if (isValid) {
+            this.dispatchEvent(new ShowToastEvent({
+                title: 'Valid',
+                message: 'Selection is valid — ready to submit.',
+                variant: 'success'
+            }));
+        }
+    }
+
+    // ── Example 4: Disabled state toggle ──────────────────────────────────
+    get disabledButtonLabel() {
+        return this.isDisabled ? 'Enable Lookup' : 'Disable Lookup';
+    }
+
+    handleToggleDisabled() {
+        this.isDisabled = !this.isDisabled;
+    }
+
+    // ── Shared event handler ───────────────────────────────────────────────
     handleLookupSelection(event) {
-        const { recordId, objectType } = event.detail;
-        
-        // Create a log entry for the UI
+        const { recordId, objectType, recordName, iconName } = event.detail;
         const newLog = {
             timestamp: Date.now(),
             time: new Date().toLocaleTimeString(),
-            action: recordId ? 'Record Selected' : 'Selection Cleared',
-            recordId: recordId || 'N/A',
-            objectType: objectType || 'N/A'
+            action: recordId ? 'Selected' : 'Cleared',
+            recordId: recordId || '—',
+            recordName: recordName || '—',
+            objectType: objectType || '—',
+            iconName: iconName || '—'
         };
-
-        // Add to start of array
         this.selectionLog = [newLog, ...this.selectionLog];
-        
-        console.log('User selected:', recordId, 'from object:', objectType);
-    }
-
-    handleSave() {
-        // Just for demo effect
-        this.dispatchEvent(
-            new ShowToastEvent({
-                title: 'Success',
-                message: 'Call logged successfully!',
-                variant: 'success'
-            })
-        );
     }
 }

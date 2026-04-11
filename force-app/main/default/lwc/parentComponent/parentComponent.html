@@ -1,76 +1,139 @@
 <!-- parentComponent.html -->
 <template>
-    <div class="slds-p-around_medium slds-theme_default">
-        
+    <div class="slds-p-around_medium">
+
         <div class="slds-m-bottom_medium">
-            <h1 class="slds-text-heading_medium slds-m-bottom_x-small">Polymorphic Lookup Demo</h1>
+            <h1 class="slds-text-heading_large slds-m-bottom_xx-small">Polymorphic Lookup — Demo</h1>
             <p class="slds-text-body_regular slds-text-color_weak">
-                Demonstrating dynamic object switching, custom filtering (SOSL/SOQL), and event handling.
+                Interactive examples of every major configuration. Interact with any lookup to see the enriched <code>select</code> event in the log panel.
             </p>
         </div>
 
         <lightning-layout multiple-rows="true" horizontal-align="space">
-            
+
+            <!-- ── Left column: Examples ─────────────────────────────────── -->
             <lightning-layout-item size="12" medium-device-size="7" padding="around-small">
-                <lightning-card icon-name="standard:log_a_call" title="Log a Call">
-                    <div class="slds-p-horizontal_medium">
-                        <lightning-input 
-                            label="Subject" 
-                            value="Discussing Q1 Renewals" 
-                            class="slds-m-bottom_small">
-                        </lightning-input>
 
-                        <div class="slds-box slds-theme_shade slds-m-bottom_small">
-                            <c-polymorphic-lookup 
-                                label="Related To (Polymorphic)"
-                                object-options={supportedObjects}
-                                filter-config={filterConfiguration}
-                                onselect={handleLookupSelection}>
-                            </c-polymorphic-lookup>
-                            <div class="slds-text-body_small slds-text-color_weak slds-m-top_xx-small">
-                                *Filters: Accounts (created > yesterday), Opps (Closed Won only).
-                            </div>
-                        </div>
+                <!-- Example 1: Multi-object with per-object SOQL filters -->
+                <lightning-card title="Example 1 — Multi-object with Filters" icon-name="standard:search">
+                    <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+                        <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_small">
+                            Four object types. Active filter on Account (last 365 days) and Opportunity (Closed Won only). Demonstrates the object-switcher UI.
+                        </p>
+                        <c-polymorphic-lookup
+                            label="Related To"
+                            object-options={multiObjectOptions}
+                            filter-config={multiObjectFilter}
+                            dropdown-limit="5"
+                            modal-limit="50"
+                            onselect={handleLookupSelection}>
+                        </c-polymorphic-lookup>
+                    </div>
+                </lightning-card>
 
-                        <lightning-input 
-                            type="date" 
-                            label="Due Date" 
-                            class="slds-m-bottom_small">
-                        </lightning-input>
+                <!-- Example 2: Single object, showCreate, fieldLevelHelp, placeholder -->
+                <lightning-card title="Example 2 — Single Object, showCreate, fieldLevelHelp" icon-name="standard:account" class="slds-m-top_small">
+                    <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+                        <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_small">
+                            Account only — no object switcher. Includes a &ldquo;New Account&rdquo; option in the dropdown (<code>show-create</code>), a custom placeholder, and a field-level help tooltip.
+                        </p>
+                        <c-polymorphic-lookup
+                            label="Account"
+                            object-options={singleObjectOptions}
+                            show-create
+                            placeholder="Search or create an Account…"
+                            field-level-help="Select the Account this record should be related to. Use 'New Account' to create one inline."
+                            onselect={handleLookupSelection}>
+                        </c-polymorphic-lookup>
+                    </div>
+                </lightning-card>
 
-                        <lightning-textarea 
-                            label="Comments" 
-                            placeholder="Enter call notes..."
-                            class="slds-m-bottom_medium">
-                        </lightning-textarea>
-
-                        <div class="slds-align_absolute-center">
-                            <lightning-button variant="brand" label="Log Call" onclick={handleSave}></lightning-button>
+                <!-- Example 3: Required + validation -->
+                <lightning-card title="Example 3 — Required Field + Validation API" icon-name="utility:check" class="slds-m-top_small">
+                    <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+                        <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_small">
+                            <code>required</code> is set. Click &ldquo;Check Validity&rdquo; without selecting a record to trigger <code>reportValidity()</code> and see the inline error message.
+                        </p>
+                        <c-polymorphic-lookup
+                            data-id="required-lookup"
+                            label="Assigned To"
+                            object-options={requiredObjectOptions}
+                            required
+                            message-when-value-missing="You must select a Contact or Lead."
+                            onselect={handleLookupSelection}>
+                        </c-polymorphic-lookup>
+                        <div class="slds-m-top_small">
+                            <lightning-button
+                                variant="brand"
+                                label="Check Validity"
+                                onclick={handleCheckValidity}>
+                            </lightning-button>
                         </div>
                     </div>
                 </lightning-card>
+
+                <!-- Example 4: Disabled toggle + label-hidden variant -->
+                <lightning-card title="Example 4 — Disabled State &amp; label-hidden Variant" icon-name="utility:settings" class="slds-m-top_small">
+                    <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+                        <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_small">
+                            Toggle the disabled state at runtime. The second lookup uses <code>variant="label-hidden"</code> — the label is visually hidden but still present for screen readers.
+                        </p>
+                        <div class="slds-grid slds-gutters slds-wrap">
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                <div class="slds-m-bottom_xx-small slds-text-body_small slds-text-color_weak">
+                                    disabled={isDisabled}
+                                </div>
+                                <c-polymorphic-lookup
+                                    label="Related Account"
+                                    object-options={singleObjectOptions}
+                                    disabled={isDisabled}
+                                    onselect={handleLookupSelection}>
+                                </c-polymorphic-lookup>
+                                <div class="slds-m-top_small">
+                                    <lightning-button
+                                        label={disabledButtonLabel}
+                                        onclick={handleToggleDisabled}>
+                                    </lightning-button>
+                                </div>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                <div class="slds-m-bottom_xx-small slds-text-body_small slds-text-color_weak">
+                                    variant="label-hidden"
+                                </div>
+                                <c-polymorphic-lookup
+                                    label="Related Contact"
+                                    variant="label-hidden"
+                                    object-options={requiredObjectOptions}
+                                    placeholder="Search contacts or leads…"
+                                    onselect={handleLookupSelection}>
+                                </c-polymorphic-lookup>
+                            </div>
+                        </div>
+                    </div>
+                </lightning-card>
+
             </lightning-layout-item>
 
+            <!-- ── Right column: Live event log ──────────────────────────── -->
             <lightning-layout-item size="12" medium-device-size="5" padding="around-small">
-                <lightning-card icon-name="standard:debug" title="Live Event Log">
-                    <div class="slds-p-horizontal_medium" style="height: 350px; overflow-y: auto;">
+                <lightning-card title="Live select Event Log" icon-name="standard:apex_plugin">
+                    <div class="slds-p-horizontal_medium" style="height: 580px; overflow-y: auto;">
                         <template if:false={selectionLog.length}>
                             <div class="slds-text-align_center slds-text-color_weak slds-p-top_large">
-                                Interact with the lookup to see events fire here...
+                                Interact with any lookup above to see the <code>select</code> event payload here…
                             </div>
                         </template>
-                        
                         <template for:each={selectionLog} for:item="log">
                             <div key={log.timestamp} class="slds-box slds-box_x-small slds-m-bottom_x-small slds-theme_shade">
-                                <div class="slds-grid slds-grid_align-spread">
-                                    <span class="slds-text-title_bold">{log.action}</span>
-                                    <span class="slds-text-body_small">{log.time}</span>
+                                <div class="slds-grid slds-grid_align-spread slds-m-bottom_xx-small">
+                                    <span class="slds-badge">{log.action}</span>
+                                    <span class="slds-text-body_small slds-text-color_weak">{log.time}</span>
                                 </div>
-                                <div class="slds-m-top_xx-small">
-                                    ID: <span class="slds-text-color_success">{log.recordId}</span>
-                                </div>
-                                <div>
-                                    Object: <span class="slds-text-color_brand">{log.objectType}</span>
+                                <div class="slds-text-body_small">
+                                    <div><span class="slds-text-color_weak">recordId</span>&nbsp;&nbsp;&nbsp;&nbsp;<strong>{log.recordId}</strong></div>
+                                    <div><span class="slds-text-color_weak">recordName</span>&nbsp;<strong>{log.recordName}</strong></div>
+                                    <div><span class="slds-text-color_weak">objectType</span>&nbsp;<strong>{log.objectType}</strong></div>
+                                    <div><span class="slds-text-color_weak">iconName</span>&nbsp;&nbsp;&nbsp;<strong>{log.iconName}</strong></div>
                                 </div>
                             </div>
                         </template>
