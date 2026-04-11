@@ -1,4 +1,12 @@
 /* polymorphicLookup.css */
+
+/* --- CSS Custom Properties (theming hooks for consumers) --- */
+:host {
+    --polymorphic-lookup-dropdown-max-height: 300px;
+    --polymorphic-lookup-focus-color: #006dcc;
+    --polymorphic-lookup-z-index: 9999;
+}
+
 /* --- Search State (Grouped) --- */
 
 .slds-combobox-group {
@@ -52,8 +60,8 @@
 
 /* Manual Focus State */
 .has-focus .slds-combobox__form-element {
-    border-color: #006dcc;
-    box-shadow: 0 0 3px #0070d2;
+    border-color: var(--polymorphic-lookup-focus-color, #006dcc);
+    box-shadow: 0 0 3px var(--polymorphic-lookup-focus-color, #006dcc);
 }
 
 /* Help Text */
@@ -69,8 +77,9 @@
 }
 
 .slds-dropdown_fluid {
-    max-height: 300px;
+    max-height: var(--polymorphic-lookup-dropdown-max-height, 300px);
     overflow-y: auto;
+    z-index: var(--polymorphic-lookup-z-index, 9999);
 }
 
 /* Force the container to look clickable */

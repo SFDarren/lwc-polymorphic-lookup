@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
-    <apiVersion>60.0</apiVersion>
+    <apiVersion>65.0</apiVersion>
     <isExposed>true</isExposed>
     <masterLabel>Polymorphic Lookup (Flow)</masterLabel>
     <description>Allows searching across multiple objects in Flow screens.</description>
@@ -13,10 +13,14 @@
             <property name="objectApiNames" label="Object API Names (CSV)" type="String" description="Comma-separated list (e.g., Account,Contact,Case)" role="inputOnly"/>
             <property name="iconNames" label="Icon Names (CSV)" type="String" description="Comma-separated list corresponding to objects (e.g., standard:account,standard:contact)" role="inputOnly"/>
             <property name="subtitleFields" label="Subtitle Fields (CSV)" type="String" description="Comma-separated list of fields to show under the name (e.g., BillingCity,Email)" role="inputOnly"/>
-            
+
             <property name="filterJson" label="Filter Configuration (JSON)" type="String" description='JSON Object mapping API Names to WHERE clauses. Example: {"Account": "BillingCity = &#39;New York&#39;"}' role="inputOnly"/>
-            
+
             <property name="required" label="Required" type="Boolean" default="false" role="inputOnly"/>
+            <property name="showCreate" label="Show New Record Option" type="Boolean" default="false" description="Shows a &apos;New {Object}&apos; option in the search dropdown" role="inputOnly"/>
+            <property name="dropdownLimit" label="Dropdown Result Limit" type="Integer" default="5" description="Max records shown in the inline dropdown" role="inputOnly"/>
+            <property name="modalLimit" label="Modal Result Limit" type="Integer" default="50" description="Max records shown in the Show All modal" role="inputOnly"/>
+            <property name="placeholder" label="Placeholder Text" type="String" description="Overrides the default placeholder (e.g., Search Accounts...)" role="inputOnly"/>
 
             <property name="selectedRecordId" label="Output: Selected Record ID" type="String" role="outputOnly"/>
             <property name="selectedObjectType" label="Output: Selected Object API Name" type="String" role="outputOnly"/>

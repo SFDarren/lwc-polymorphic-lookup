@@ -127,7 +127,6 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
             top: ${fixedTop}px;
             left: ${fixedLeft}px;
             width: ${inputRect.width}px;
-            z-index: 9999;
         `;
     }
 
