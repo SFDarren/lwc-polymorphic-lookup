@@ -17,7 +17,7 @@
                         <div class="slds-combobox_object-switcher slds-combobox-addon_start">
                             <div class={objectDropdownClass} aria-expanded={isObjectDropdownOpen} aria-haspopup="listbox" role="combobox" onfocusout={handleObjectBlur}>
                                 <div class="slds-combobox__form-element slds-input-has-icon slds-input-has-icon_right object-switcher-trigger" role="none" onclick={toggleObjectDropdown}>
-                                    <button type="button" class="slds-input_faux slds-combobox__input object-switcher-btn" aria-controls="object-switcher-listbox">
+                                    <button type="button" class="slds-input_faux slds-combobox__input object-switcher-btn" aria-controls="object-switcher-listbox" aria-label="Select object type">
                                         <span class="slds-truncate">
                                             <lightning-icon icon-name={selectedObject.iconName} size="small" class="slds-icon-text-default slds-m-right_x-small"></lightning-icon>
                                         </span>
@@ -53,14 +53,17 @@
                                     class="slds-input slds-combobox__input"
                                     aria-autocomplete="list"
                                     aria-controls="record-listbox"
+                                    aria-label={searchAriaLabel}
                                     autocomplete="off"
-                                    role="textbox"
+                                    role="combobox"
+                                    aria-expanded={isSearchDropdownOpen}
                                     placeholder={placeholderText}
                                     value={searchTerm}
                                     disabled={disabled}
                                     onfocus={handleSearchFocus}
                                     onblur={handleSearchBlur}
-                                    oninput={handleSearchInput} />
+                                    oninput={handleSearchInput}
+                                    onkeydown={handleSearchKeyDown} />
                                 <template if:true={isLoading}>
                                     <div class="slds-input__icon-group slds-input__icon-group_right">
                                         <div role="status" class="slds-spinner slds-spinner_brand slds-spinner_x-small slds-input__spinner">
@@ -147,6 +150,11 @@
                                     </template>
                                 </ul>
                             </div>
+                        </div>
+                        <div class="slds-assistive-text" aria-live="polite" aria-atomic="true">
+                            <template lwc:if={isSearchDropdownOpen}>
+                                {searchResults.length} results available
+                            </template>
                         </div>
                     </div>
                 </div>

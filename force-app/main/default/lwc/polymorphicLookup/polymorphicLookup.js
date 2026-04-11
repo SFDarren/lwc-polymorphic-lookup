@@ -62,6 +62,7 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
     showSelectionHelp = false;
     searchThrottlingTimeout;
     _searchGeneration = 0;
+    _focusedIndex = -1;
 
     // Configuration for the Modal Datatable
     // using 'button' type with 'base' variant looks like a text link
@@ -216,6 +217,10 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
         return `Search ${this.selectedObject.plural + "..." || "..."}`;
     }
 
+    get searchAriaLabel() {
+        return `Search ${this.selectedObject.plural || "records"}`;
+    }
+
     get labelClass() {
         return this.variant === "label-hidden"
             ? "slds-form-element__label slds-assistive-text"
@@ -324,6 +329,7 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
         if (this.disabled || this.isCreatingRecord) return;
         this.isObjectDropdownOpen = false;
         this.isSearchDropdownOpen = true;
+        this._focusedIndex = -1;
         this._calculateDropdownPosition();
         this._startPositionLoop();
         this.performSearch(this.dropdownLimit);
@@ -341,7 +347,37 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
 
         // Only close if we are truly leaving the component
         this.isSearchDropdownOpen = false;
+        this._focusedIndex = -1;
         this._stopPositionLoop();
+    }
+
+    handleSearchKeyDown(event) {
+        if (!this.isSearchDropdownOpen) return;
+
+        if (event.key === "Escape") {
+            event.preventDefault();
+            this.isSearchDropdownOpen = false;
+            this._focusedIndex = -1;
+            this._stopPositionLoop();
+            const input = this.refs.searchInput && this.refs.searchInput.querySelector("input");
+            if (input) input.blur();
+            return;
+        }
+
+        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+            event.preventDefault();
+            const items = this.refs.recordListbox
+                ? Array.from(this.refs.recordListbox.querySelectorAll("li[tabindex='0']"))
+                : [];
+            if (!items.length) return;
+
+            if (event.key === "ArrowDown") {
+                this._focusedIndex = Math.min(this._focusedIndex + 1, items.length - 1);
+            } else {
+                this._focusedIndex = Math.max(this._focusedIndex - 1, 0);
+            }
+            items[this._focusedIndex].focus();
+        }
     }
 
     handleSearchInput(event) {
@@ -419,10 +455,24 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
 
         // Fetch more results for the datatable
         this.performSearch(this.modalLimit);
+
+        // Focus first focusable element in modal after render
+        setTimeout(() => {
+            const modal = this.template.querySelector(".slds-modal");
+            if (modal) {
+                const focusable = modal.querySelector("button, [tabindex='0'], input, [href]");
+                if (focusable) focusable.focus();
+            }
+        }, 0);
     }
 
     handleCloseModal() {
         this.isModalOpen = false;
+        // Return focus to search input
+        setTimeout(() => {
+            const input = this.refs.searchInput && this.refs.searchInput.querySelector("input");
+            if (input) input.focus();
+        }, 0);
     }
 
     handleModalRowAction(event) {
@@ -430,7 +480,6 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
         const row = event.detail.row;
 
         if (actionName === "select_record") {
-            // Mimic the structure of handleRecordSelect
             this.finalizeSelection(row.id, row.title, row.icon);
             this.isModalOpen = false;
         }
