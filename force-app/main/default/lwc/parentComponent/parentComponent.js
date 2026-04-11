@@ -55,6 +55,10 @@ export default class ParentComponent extends LightningElement {
     }
 
     // ── Example 5: Multi-select cross-object ──────────────────────────────
+    // Used to pass a literal false to allow-cross-object-selection without requiring API v66
+    lockedCrossObjectSelection = false;
+    noShowPills = false;
+
     multiSelectObjectOptions = [
         { label: 'Account',  plural: 'Accounts',  value: 'Account',  iconName: 'standard:account',  subtitleField: 'Phone' },
         { label: 'Contact',  plural: 'Contacts',  value: 'Contact',  iconName: 'standard:contact',  subtitleField: 'Email' },

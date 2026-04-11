@@ -21,9 +21,7 @@
                             label={pill.title}
                             name={pill.id}
                             onremove={handlePillRemove}>
-                            <template lwc:if={showObjectIconOnPills}>
-                                <lightning-icon slot="media" icon-name={pill.icon} size="x-small"></lightning-icon>
-                            </template>
+                            <lightning-icon icon-name={pill.icon} alternative-text={pill.objectType} size="x-small"></lightning-icon>
                         </lightning-pill>
                     </template>
                 </div>

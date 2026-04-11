@@ -134,7 +134,7 @@
                             label="Related Records (locked type)"
                             object-options={multiSelectObjectOptions}
                             multi-select
-                            allow-cross-object-selection={false}
+                            allow-cross-object-selection={lockedCrossObjectSelection}
                             onselect={handleLookupSelection}>
                         </c-polymorphic-lookup>
                         <p class="slds-text-body_small slds-text-color_weak slds-m-top_medium slds-m-bottom_xx-small">
@@ -144,7 +144,7 @@
                             label="Accounts (parent-managed display)"
                             object-options={singleObjectOptions}
                             multi-select
-                            show-pills={false}
+                            show-pills={noShowPills}
                             onselect={handleLookupSelection}>
                         </c-polymorphic-lookup>
                     </div>

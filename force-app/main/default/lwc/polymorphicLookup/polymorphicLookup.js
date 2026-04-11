@@ -26,9 +26,25 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
 
     // Multi-select
     @api multiSelect = false;
-    @api allowCrossObjectSelection = true;
-    @api showPills = true;
     @api maxSelections;
+
+    _allowCrossObjectSelection = true;
+    @api
+    get allowCrossObjectSelection() {
+        return this._allowCrossObjectSelection;
+    }
+    set allowCrossObjectSelection(val) {
+        this._allowCrossObjectSelection = val !== false && val !== 'false';
+    }
+
+    _showPills = true;
+    @api
+    get showPills() {
+        return this._showPills;
+    }
+    set showPills(val) {
+        this._showPills = val !== false && val !== 'false';
+    }
 
     // Pre-population: accepts a record ID (single) or array of IDs (multi).
     _value = null;
@@ -270,11 +286,6 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
     // Combined disabled state for the search input
     get isSearchInputDisabled() {
         return this.disabled || this.isAtMaxSelections;
-    }
-
-    // Show object icon on pills when there are multiple object types available
-    get showObjectIconOnPills() {
-        return !this.isSingleObject;
     }
 
     // Exclude already-selected records from dropdown results
@@ -628,16 +639,34 @@ export default class PolymorphicLookup extends NavigationMixin(LightningElement)
             this._customValidity = "";
             this._showError = false;
             this.searchTerm = "";
-            this.isSearchDropdownOpen = false;
-            this._stopPositionLoop();
+            this.searchResults = [];
             this.dispatchSelection("add", newRec);
 
-            // Re-focus input so user can continue picking
-            // eslint-disable-next-line @lwc/lwc/no-async-operation
-            Promise.resolve().then(() => {
-                const input = this.refs.searchInput && this.refs.searchInput.querySelector("input");
-                if (input) input.focus();
-            });
+            // The mousedown handler uses preventDefault so the input never lost focus.
+            // Calling .focus() on an already-focused element won't re-fire onfocus, so
+            // we can't rely on handleSearchFocus to reopen the dropdown. Instead, drive
+            // the dropdown state directly.
+            if (this.isAtMaxSelections) {
+                // Input will be disabled — blur it so it doesn't look stale
+                this.isSearchDropdownOpen = false;
+                this._stopPositionLoop();
+                // eslint-disable-next-line @lwc/lwc/no-async-operation
+                Promise.resolve().then(() => {
+                    const input = this.refs.searchInput && this.refs.searchInput.querySelector("input");
+                    if (input) input.blur();
+                });
+            } else {
+                // Reopen immediately so user can continue picking without re-clicking
+                this.isSearchDropdownOpen = true;
+                this._calculateDropdownPosition();
+                this._startPositionLoop();
+                this.performSearch(this.dropdownLimit);
+                // eslint-disable-next-line @lwc/lwc/no-async-operation
+                Promise.resolve().then(() => {
+                    const input = this.refs.searchInput && this.refs.searchInput.querySelector("input");
+                    if (input) input.focus();
+                });
+            }
         } else {
             this._value = recordId;
             this.selectedRecord = {
