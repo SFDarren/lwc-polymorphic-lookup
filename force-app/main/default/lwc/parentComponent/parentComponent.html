@@ -112,6 +112,44 @@
                     </div>
                 </lightning-card>
 
+                <!-- Example 5: Multi-select cross-object -->
+                <lightning-card title="Example 5 — Multi-Select (Cross-Object)" icon-name="utility:multi_select_checkbox" class="slds-m-top_small">
+                    <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+                        <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_small">
+                            <code>multi-select</code> across Account, Contact, and Lead. Each pill shows the object icon.
+                            The object switcher is freely changeable between picks (<code>allow-cross-object-selection</code> defaults to <code>true</code>).
+                            Capped at 5 selections (<code>max-selections="5"</code>).
+                        </p>
+                        <c-polymorphic-lookup
+                            label="Related Records"
+                            object-options={multiSelectObjectOptions}
+                            multi-select
+                            max-selections="5"
+                            onselect={handleLookupSelection}>
+                        </c-polymorphic-lookup>
+                        <p class="slds-text-body_small slds-text-color_weak slds-m-top_medium slds-m-bottom_xx-small">
+                            Same objects, <code>allow-cross-object-selection="false"</code> — switcher locks after first pick:
+                        </p>
+                        <c-polymorphic-lookup
+                            label="Related Records (locked type)"
+                            object-options={multiSelectObjectOptions}
+                            multi-select
+                            allow-cross-object-selection={false}
+                            onselect={handleLookupSelection}>
+                        </c-polymorphic-lookup>
+                        <p class="slds-text-body_small slds-text-color_weak slds-m-top_medium slds-m-bottom_xx-small">
+                            Single object + <code>multi-select</code> + <code>show-pills="false"</code> — no pill UI (parent handles display):
+                        </p>
+                        <c-polymorphic-lookup
+                            label="Accounts (parent-managed display)"
+                            object-options={singleObjectOptions}
+                            multi-select
+                            show-pills={false}
+                            onselect={handleLookupSelection}>
+                        </c-polymorphic-lookup>
+                    </div>
+                </lightning-card>
+
             </lightning-layout-item>
 
             <!-- ── Right column: Live event log ──────────────────────────── -->
@@ -134,6 +172,12 @@
                                     <div><span class="slds-text-color_weak">recordName</span>&nbsp;<strong>{log.recordName}</strong></div>
                                     <div><span class="slds-text-color_weak">objectType</span>&nbsp;<strong>{log.objectType}</strong></div>
                                     <div><span class="slds-text-color_weak">iconName</span>&nbsp;&nbsp;&nbsp;<strong>{log.iconName}</strong></div>
+                                    <template lwc:if={log.selectedCount}>
+                                        <div class="slds-m-top_xx-small" style="border-top: 1px solid #e0e0e0; padding-top: 4px;">
+                                            <div><span class="slds-text-color_weak">total selected</span>&nbsp;<strong>{log.selectedCount}</strong></div>
+                                            <div><span class="slds-text-color_weak">all selected</span>&nbsp;&nbsp;<strong>{log.selectedSummary}</strong></div>
+                                        </div>
+                                    </template>
                                 </div>
                             </div>
                         </template>

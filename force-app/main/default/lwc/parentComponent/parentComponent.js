@@ -54,18 +54,46 @@ export default class ParentComponent extends LightningElement {
         this.isDisabled = !this.isDisabled;
     }
 
+    // ── Example 5: Multi-select cross-object ──────────────────────────────
+    multiSelectObjectOptions = [
+        { label: 'Account',  plural: 'Accounts',  value: 'Account',  iconName: 'standard:account',  subtitleField: 'Phone' },
+        { label: 'Contact',  plural: 'Contacts',  value: 'Contact',  iconName: 'standard:contact',  subtitleField: 'Email' },
+        { label: 'Lead',     plural: 'Leads',     value: 'Lead',     iconName: 'standard:lead',     subtitleField: 'Company' }
+    ];
+
     // ── Shared event handler ───────────────────────────────────────────────
     handleLookupSelection(event) {
-        const { recordId, objectType, recordName, iconName } = event.detail;
-        const newLog = {
-            timestamp: Date.now(),
-            time: new Date().toLocaleTimeString(),
-            action: recordId ? 'Selected' : 'Cleared',
-            recordId: recordId || '—',
-            recordName: recordName || '—',
-            objectType: objectType || '—',
-            iconName: iconName || '—'
-        };
+        const { recordId, objectType, recordName, iconName, action, selectedRecords } = event.detail;
+
+        let newLog;
+        if (action && selectedRecords) {
+            // Multi-select event
+            const actionLabel = action === 'add' ? 'Added' : action === 'remove' ? 'Removed' : 'Cleared';
+            newLog = {
+                timestamp: Date.now(),
+                time: new Date().toLocaleTimeString(),
+                action: actionLabel,
+                recordId: recordId || '—',
+                recordName: recordName || '—',
+                objectType: objectType || '—',
+                iconName: iconName || '—',
+                selectedCount: selectedRecords.length,
+                selectedSummary: selectedRecords.map(r => r.title).join(', ') || '—'
+            };
+        } else {
+            // Single-select event
+            newLog = {
+                timestamp: Date.now(),
+                time: new Date().toLocaleTimeString(),
+                action: recordId ? 'Selected' : 'Cleared',
+                recordId: recordId || '—',
+                recordName: recordName || '—',
+                objectType: objectType || '—',
+                iconName: iconName || '—',
+                selectedCount: null,
+                selectedSummary: null
+            };
+        }
         this.selectionLog = [newLog, ...this.selectionLog];
     }
 }

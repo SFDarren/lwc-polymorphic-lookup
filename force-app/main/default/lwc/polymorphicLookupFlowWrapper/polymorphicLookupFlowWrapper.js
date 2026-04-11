@@ -14,9 +14,18 @@ export default class PolymorphicLookupFlowWrapper extends LightningElement {
     @api modalLimit = 50;
     @api placeholder;
 
-    // Flow Outputs
+    // Multi-select inputs
+    @api multiSelect = false;
+    @api allowCrossObjectSelection = true;
+    @api maxSelections;
+
+    // Flow Outputs — single-select
     @api selectedRecordId;
     @api selectedObjectType;
+
+    // Flow Outputs — multi-select (CSV strings)
+    @api selectedRecordIds = '';
+    @api selectedObjectTypes = '';
 
     @track computedObjectOptions = [];
     @track computedFilterConfig = {};
@@ -61,13 +70,21 @@ export default class PolymorphicLookupFlowWrapper extends LightningElement {
     }
 
     handleLookupSelection(event) {
-        const { recordId, objectType } = event.detail;
+        const { recordId, objectType, selectedRecords } = event.detail;
 
-        this.selectedRecordId = recordId;
-        this.selectedObjectType = objectType;
-
-        this.dispatchEvent(new FlowAttributeChangeEvent('selectedRecordId', recordId));
-        this.dispatchEvent(new FlowAttributeChangeEvent('selectedObjectType', objectType));
+        if (this.multiSelect && selectedRecords) {
+            const ids = selectedRecords.map(r => r.id).join(',');
+            const types = selectedRecords.map(r => r.objectType).join(',');
+            this.selectedRecordIds = ids;
+            this.selectedObjectTypes = types;
+            this.dispatchEvent(new FlowAttributeChangeEvent('selectedRecordIds', ids));
+            this.dispatchEvent(new FlowAttributeChangeEvent('selectedObjectTypes', types));
+        } else {
+            this.selectedRecordId = recordId;
+            this.selectedObjectType = objectType;
+            this.dispatchEvent(new FlowAttributeChangeEvent('selectedRecordId', recordId));
+            this.dispatchEvent(new FlowAttributeChangeEvent('selectedObjectType', objectType));
+        }
     }
 
     get lookup() {
