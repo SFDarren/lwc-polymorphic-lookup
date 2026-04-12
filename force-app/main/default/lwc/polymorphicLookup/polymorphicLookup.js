@@ -732,33 +732,14 @@ export default class PolymorphicLookup extends NavigationMixin(
       this.searchResults = [];
       this.dispatchSelection("add", newRec);
 
-      // The mousedown handler uses preventDefault so the input never lost focus.
-      // Calling .focus() on an already-focused element won't re-fire onfocus, so
-      // we can't rely on handleSearchFocus to reopen the dropdown. Instead, drive
-      // the dropdown state directly.
-      if (this.isAtMaxSelections) {
-        // Input will be disabled — blur it so it doesn't look stale
-        this.isSearchDropdownOpen = false;
-        this._stopPositionLoop();
-        Promise.resolve().then(() => {
-          const input =
-            this.refs.searchInput &&
-            this.refs.searchInput.querySelector("input");
-          if (input) input.blur();
-        });
-      } else {
-        // Reopen immediately so user can continue picking without re-clicking
-        this.isSearchDropdownOpen = true;
-        this._calculateDropdownPosition();
-        this._startPositionLoop();
-        this.performSearch(this.dropdownLimit);
-        Promise.resolve().then(() => {
-          const input =
-            this.refs.searchInput &&
-            this.refs.searchInput.querySelector("input");
-          if (input) input.focus();
-        });
-      }
+      // Input will be disabled — blur it so it doesn't look stale
+      this.isSearchDropdownOpen = false;
+      this._stopPositionLoop();
+      Promise.resolve().then(() => {
+        const input =
+          this.refs.searchInput && this.refs.searchInput.querySelector("input");
+        if (input) input.blur();
+      });
     } else {
       this._value = recordId;
       this.selectedRecord = {
