@@ -9,6 +9,10 @@ import getLatestCreatedRecord from "@salesforce/apex/PolymorphicLookupController
 import getRecordById from "@salesforce/apex/PolymorphicLookupController.getRecordById";
 import userId from "@salesforce/user/Id";
 
+const SEARCH_THROTTLE_MS = 300;
+const NEW_RECORD_POLL_MS = 500;
+const FOCUS_DELAY_MS = 0;
+
 export default class PolymorphicLookup extends NavigationMixin(
   LightningElement
 ) {
@@ -113,8 +117,8 @@ export default class PolymorphicLookup extends NavigationMixin(
   _searchGeneration = 0;
   _focusedIndex = -1;
 
-  // Configuration for the Modal Datatable
-  // using 'button' type with 'base' variant looks like a text link
+  // Configuration for the Modal Datatable.
+  // 'button' type with 'base' variant renders as a text link.
   get modalColumns() {
     return [
       {
@@ -176,12 +180,7 @@ export default class PolymorphicLookup extends NavigationMixin(
     const fixedLeft = inputRect.left - anchorRect.left + inputRect.width / 2;
     const fixedTop = inputRect.bottom - anchorRect.top;
 
-    this.dropdownStyle = `
-            position: fixed;
-            top: ${fixedTop}px;
-            left: ${fixedLeft}px;
-            width: ${inputRect.width}px;
-        `;
+    this.dropdownStyle = `position: fixed; top: ${fixedTop}px; left: ${fixedLeft}px; width: ${inputRect.width}px;`;
   }
 
   connectedCallback() {
@@ -199,39 +198,36 @@ export default class PolymorphicLookup extends NavigationMixin(
     }
   }
 
+  _findObjectOption(objectApiName) {
+    if (!this.objectOptions) return null;
+    return this.objectOptions.find((o) => o.value === objectApiName) || null;
+  }
+
   _resolveRecordById(recordId, appendToMulti) {
-    // Determine which object to use for the lookup
     let objectApiName = this.valueObjectApiName;
-    let iconName;
-    let subtitleField;
+    let option;
     if (
       !objectApiName &&
       this.objectOptions &&
       this.objectOptions.length === 1
     ) {
-      objectApiName = this.objectOptions[0].value;
-      iconName = this.objectOptions[0].iconName;
-      subtitleField = this.objectOptions[0].subtitleField;
-    } else if (objectApiName && this.objectOptions) {
-      const match = this.objectOptions.find((o) => o.value === objectApiName);
-      if (match) {
-        iconName = match.iconName;
-        subtitleField = match.subtitleField;
-      }
+      option = this.objectOptions[0];
+      objectApiName = option.value;
+    } else {
+      option = this._findObjectOption(objectApiName);
     }
     if (!objectApiName) return;
 
     getRecordById({
       recordId,
       objectApiName,
-      iconName: iconName || "",
-      subtitleField: subtitleField || null
+      iconName: (option && option.iconName) || "",
+      subtitleField: (option && option.subtitleField) || null
     })
       .then((results) => {
         if (results && results.length > 0) {
           const rec = results[0];
           if (appendToMulti) {
-            // Deduplicate before appending
             if (!this._selectedRecords.find((r) => r.id === rec.id)) {
               this._selectedRecords = [
                 ...this._selectedRecords,
@@ -244,13 +240,8 @@ export default class PolymorphicLookup extends NavigationMixin(
               ];
             }
           } else {
-            // Sync selectedObject to the resolved object type
-            if (objectApiName && this.objectOptions) {
-              const match = this.objectOptions.find(
-                (o) => o.value === objectApiName
-              );
-              if (match) this.selectedObject = match;
-            }
+            const match = this._findObjectOption(objectApiName);
+            if (match) this.selectedObject = match;
             this.selectedRecord = {
               id: rec.id,
               title: rec.title,
@@ -276,8 +267,6 @@ export default class PolymorphicLookup extends NavigationMixin(
       this.locationHrefPoll = null;
     }
   }
-
-  // --- Computed Getters ---
 
   get isMultiSelect() {
     return this.multiSelect === true;
@@ -354,7 +343,14 @@ export default class PolymorphicLookup extends NavigationMixin(
     );
   }
 
-  // --- Dynamic Classes ---
+  get isSingleObject() {
+    return this.objectOptions && this.objectOptions.length === 1;
+  }
+
+  get isMultiObject() {
+    return !this.isSingleObject;
+  }
+
   get objectDropdownClass() {
     return `slds-combobox slds-dropdown-trigger slds-dropdown-trigger_click ${this.isObjectDropdownOpen ? "slds-is-open" : ""}`;
   }
@@ -372,7 +368,8 @@ export default class PolymorphicLookup extends NavigationMixin(
     if (this.isAtMaxSelections)
       return `Maximum ${this.maxSelections} selections reached`;
     if (this.placeholder) return this.placeholder;
-    return `Search ${this.selectedObject.plural + "..." || "..."}`;
+    const objectName = this.selectedObject.plural || "records";
+    return `Search ${objectName}...`;
   }
 
   get searchAriaLabel() {
@@ -439,17 +436,39 @@ export default class PolymorphicLookup extends NavigationMixin(
     );
   }
 
-  get isSingleObject() {
-    return this.objectOptions && this.objectOptions.length === 1;
-  }
-
   get searchContainerClass() {
     return this.isSingleObject
       ? "single-object slds-combobox_container slds-combobox-addon_end"
       : "slds-combobox_container slds-combobox-addon_end"; // merged border (right side only)
   }
 
-  // --- Object Selector ---
+  _isInternalFocusMove(event) {
+    const next = event.relatedTarget;
+    return next && this.template.contains(next);
+  }
+
+  _focusSearchInput() {
+    // eslint-disable-next-line @lwc/lwc/no-async-operation
+    setTimeout(() => {
+      const input =
+        (this.refs.searchInput &&
+          this.refs.searchInput.querySelector("input")) ||
+        this.template.querySelector("input.slds-combobox__input");
+      if (input) input.focus();
+    }, FOCUS_DELAY_MS);
+  }
+
+  _selectObject(objectApiName) {
+    this.selectedObject = this.objectOptions.find(
+      (opt) => opt.value === objectApiName
+    );
+    this.isObjectDropdownOpen = false;
+    this.searchTerm = "";
+    this.searchResults = [];
+    this.isSearchDropdownOpen = false;
+    this._focusSearchInput();
+  }
+
   toggleObjectDropdown() {
     if (this.disabled || this.isObjectSwitcherLocked) return;
     this.isObjectDropdownOpen = !this.isObjectDropdownOpen;
@@ -459,68 +478,21 @@ export default class PolymorphicLookup extends NavigationMixin(
   }
 
   handleObjectSelect(event) {
-    const selectedValue = event.currentTarget.dataset.value;
-    this.selectedObject = this.objectOptions.find(
-      (opt) => opt.value === selectedValue
-    );
-    this.isObjectDropdownOpen = false;
-
-    this.searchTerm = "";
-    this.searchResults = [];
-    this.isSearchDropdownOpen = false;
-
-    // eslint-disable-next-line @lwc/lwc/no-async-operation
-    setTimeout(() => {
-      const searchInput = this.template.querySelector(
-        "input.slds-combobox__input"
-      );
-      if (searchInput) {
-        searchInput.focus();
-      }
-    }, 0);
+    this._selectObject(event.currentTarget.dataset.value);
   }
 
   handleObjectKeyDown(event) {
     if (event.key === "Enter") {
       event.preventDefault();
-
-      const selectedValue = event.currentTarget.dataset.value;
-      this.selectedObject = this.objectOptions.find(
-        (opt) => opt.value === selectedValue
-      );
-      this.isObjectDropdownOpen = false;
-
-      this.searchTerm = "";
-      this.searchResults = [];
-      this.isSearchDropdownOpen = false;
-
-      // eslint-disable-next-line @lwc/lwc/no-async-operation
-      setTimeout(() => {
-        const searchInput = this.template.querySelector(
-          "input.slds-combobox__input"
-        );
-        if (searchInput) {
-          searchInput.focus();
-        }
-      }, 0);
+      this._selectObject(event.currentTarget.dataset.value);
     }
   }
 
   handleObjectBlur(event) {
-    // 1. Check where the focus is going next
-    const nextFocusedElement = event.relatedTarget;
-
-    // 2. If the user clicked inside the component (e.g., clicked the scrollbar,
-    //    or tabbed to an item in the list), DO NOT close.
-    if (nextFocusedElement && this.template.contains(nextFocusedElement)) {
-      return;
-    }
-
-    // 3. Focus has left the component entirely (clicked background or outside field)
+    if (this._isInternalFocusMove(event)) return;
     this.isObjectDropdownOpen = false;
   }
 
-  // --- Search Logic ---
   handleSearchFocus() {
     if (this.disabled || this.isCreatingRecord || this.isAtMaxSelections)
       return;
@@ -533,16 +505,7 @@ export default class PolymorphicLookup extends NavigationMixin(
   }
 
   handleSearchBlur(event) {
-    const nextFocusedElement = event.relatedTarget;
-
-    // If the next focused element is INSIDE this component (e.g., the list items),
-    // DO NOT close the dropdown.
-    if (nextFocusedElement && this.template.contains(nextFocusedElement)) {
-      // Keep open
-      return;
-    }
-
-    // Only close if we are truly leaving the component
+    if (this._isInternalFocusMove(event)) return;
     this.isSearchDropdownOpen = false;
     this._focusedIndex = -1;
     this._stopPositionLoop();
@@ -592,7 +555,11 @@ export default class PolymorphicLookup extends NavigationMixin(
     // eslint-disable-next-line @lwc/lwc/no-async-operation
     this.searchThrottlingTimeout = setTimeout(() => {
       this.performSearch(this.dropdownLimit);
-    }, 300);
+    }, SEARCH_THROTTLE_MS);
+  }
+
+  _whereClauseFor(objectApiName) {
+    return (this.filterConfig && this.filterConfig[objectApiName]) || "";
   }
 
   // Reusable search function
@@ -605,7 +572,7 @@ export default class PolymorphicLookup extends NavigationMixin(
     this._searchGeneration += 1;
     const generation = this._searchGeneration;
 
-    this.searchError = null; // Clear previous error
+    this.searchError = null;
 
     // In multi-select mode, inflate the query limit so that after filtering out
     // already-selected records the dropdown still shows a full list of results.
@@ -614,22 +581,12 @@ export default class PolymorphicLookup extends NavigationMixin(
         ? limitSize + this._selectedRecords.length
         : limitSize;
 
-    // Extract specific filter for the currently selected object
-    let whereClause = "";
-    if (
-      this.filterConfig &&
-      this.selectedObject.value &&
-      this.filterConfig[this.selectedObject.value]
-    ) {
-      whereClause = this.filterConfig[this.selectedObject.value];
-    }
-
     searchRecords({
       objectApiName: this.selectedObject.value,
       searchKey: this.searchTerm,
       iconName: this.selectedObject.iconName,
       subtitleField: this.selectedObject.subtitleField,
-      whereClause: whereClause,
+      whereClause: this._whereClauseFor(this.selectedObject.value),
       queryLimit: queryLimit
     })
       .then((results) => {
@@ -658,7 +615,6 @@ export default class PolymorphicLookup extends NavigationMixin(
       });
   }
 
-  // --- Modal Logic ("Show All") ---
   handleShowAll(event) {
     // Prevent blur from closing the dropdown too early
     if (event) event.preventDefault();
@@ -666,7 +622,6 @@ export default class PolymorphicLookup extends NavigationMixin(
     this.isSearchDropdownOpen = false;
     this.isModalOpen = true;
 
-    // Fetch more results for the datatable
     this.performSearch(this.modalLimit);
 
     // Focus first focusable element in modal after render
@@ -679,18 +634,12 @@ export default class PolymorphicLookup extends NavigationMixin(
         );
         if (focusable) focusable.focus();
       }
-    }, 0);
+    }, FOCUS_DELAY_MS);
   }
 
   handleCloseModal() {
     this.isModalOpen = false;
-    // Return focus to search input
-    // eslint-disable-next-line @lwc/lwc/no-async-operation
-    setTimeout(() => {
-      const input =
-        this.refs.searchInput && this.refs.searchInput.querySelector("input");
-      if (input) input.focus();
-    }, 0);
+    this._focusSearchInput();
   }
 
   handleModalRowAction(event) {
@@ -703,7 +652,6 @@ export default class PolymorphicLookup extends NavigationMixin(
     }
   }
 
-  // --- Selection Actions ---
   handleRecordSelect(event) {
     event.preventDefault();
     const recordId = event.currentTarget.dataset.id;
@@ -775,19 +723,9 @@ export default class PolymorphicLookup extends NavigationMixin(
     this._showError = false;
     this.showSelectionHelp = false;
     this.dispatchSelection(null, null);
-
-    // eslint-disable-next-line @lwc/lwc/no-async-operation
-    setTimeout(() => {
-      const searchInput = this.template.querySelector(
-        "input.slds-combobox__input"
-      );
-      if (searchInput) {
-        searchInput.focus();
-      }
-    }, 0);
+    this._focusSearchInput();
   }
 
-  // --- Selection State Interaction ---
   handleSelectionFocus() {
     this.showSelectionHelp = true;
   }
@@ -807,7 +745,6 @@ export default class PolymorphicLookup extends NavigationMixin(
     if (event.key === "Enter") {
       event.preventDefault();
 
-      // Check for specific actions based on data attributes or dataset
       const action = event.currentTarget.dataset.action;
 
       if (action === "show-all") {
@@ -815,7 +752,6 @@ export default class PolymorphicLookup extends NavigationMixin(
       } else if (action === "new-record") {
         this.handleNewRecord(event);
       } else {
-        // It is a standard record selection
         const recordId = event.currentTarget.dataset.id;
         const recordName = event.currentTarget.dataset.title;
         const iconName = event.currentTarget.dataset.icon;
@@ -827,9 +763,37 @@ export default class PolymorphicLookup extends NavigationMixin(
 
   initialLocationHref;
   locationHrefPoll;
+
+  _onNewRecordPopupClosed() {
+    this.isLoading = true;
+    getLatestCreatedRecord({
+      objectApiName: this.selectedObject.value,
+      iconName: this.selectedObject.iconName,
+      userId: userId
+    })
+      .then((results) => {
+        if (results.length > 0) {
+          const result = results[0];
+          this.finalizeSelection(
+            result.id,
+            result.title,
+            this.selectedObject.iconName
+          );
+        }
+      })
+      .catch(() => {
+        // Swallow intentionally: popup may close without creating a record
+      })
+      .finally(() => {
+        this.isLoading = false;
+        this.isCreatingRecord = false;
+      });
+  }
+
   handleNewRecord(event) {
     event.preventDefault();
     if (this.disabled) return;
+
     this.isCreatingRecord = true;
     this.isSearchDropdownOpen = false;
     this.initialLocationHref = window.location.href;
@@ -839,44 +803,13 @@ export default class PolymorphicLookup extends NavigationMixin(
     // eslint-disable-next-line @lwc/lwc/no-async-operation
     this.locationHrefPoll = setInterval(() => {
       if (hrefHasChanged && this.initialLocationHref === window.location.href) {
-        // means popup was launched and closed
         clearInterval(this.locationHrefPoll);
         this.locationHrefPoll = null;
-
-        this.isLoading = true;
-        // query record created by user in the last 30 seconds?
-        getLatestCreatedRecord({
-          objectApiName: this.selectedObject.value,
-          iconName: this.selectedObject.iconName,
-          userId: userId
-        })
-          .then((results) => {
-            console.log("results: ", JSON.stringify(results, null, 2));
-            if (results.length !== 0) {
-              const result = results[0];
-              this.finalizeSelection(
-                result.id,
-                result.title,
-                this.selectedObject.iconName
-              );
-            }
-          })
-          .catch((error) => {
-            console.log(
-              "fail silently since this is just default error: ",
-              JSON.stringify(error, null, 2)
-            );
-          })
-          .finally(() => {
-            this.isLoading = false;
-            this.isCreatingRecord = false;
-          });
-      } else {
-        if (this.initialLocationHref !== window.location.href) {
-          hrefHasChanged = true;
-        }
+        this._onNewRecordPopupClosed();
+      } else if (this.initialLocationHref !== window.location.href) {
+        hrefHasChanged = true;
       }
-    }, 500);
+    }, NEW_RECORD_POLL_MS);
 
     this[NavigationMixin.Navigate]({
       type: "standard__objectPage",
@@ -888,7 +821,7 @@ export default class PolymorphicLookup extends NavigationMixin(
         count: "1",
         nooverride: "1",
         useRecordTypeCheck: "1",
-        navigationLocation: "RELATED_LIST" // this will make it stay in current record page after closed
+        navigationLocation: "RELATED_LIST" // keeps page context after popup closes
       }
     });
   }
@@ -896,22 +829,24 @@ export default class PolymorphicLookup extends NavigationMixin(
   dispatchSelection(action, changedRecord) {
     let detail;
     if (this.isMultiSelect) {
+      const added = action === "add" ? changedRecord : null;
       detail = {
         action,
         changedRecord,
         selectedRecords: [...this._selectedRecords],
         // Backwards-compat fields — populated on 'add', null on 'remove'/'clear'
-        recordId: action === "add" ? changedRecord.id : null,
-        objectType: action === "add" ? changedRecord.objectType : null,
-        recordName: action === "add" ? changedRecord.title : null,
-        iconName: action === "add" ? changedRecord.icon : null
+        recordId: added ? added.id : null,
+        objectType: added ? added.objectType : null,
+        recordName: added ? added.title : null,
+        iconName: added ? added.icon : null
       };
     } else {
+      const rec = this.selectedRecord;
       detail = {
-        recordId: this.selectedRecord ? this.selectedRecord.id : null,
-        objectType: this.selectedRecord ? this.selectedRecord.objectType : null,
-        recordName: this.selectedRecord ? this.selectedRecord.title : null,
-        iconName: this.selectedRecord ? this.selectedRecord.icon : null
+        recordId: rec ? rec.id : null,
+        objectType: rec ? rec.objectType : null,
+        recordName: rec ? rec.title : null,
+        iconName: rec ? rec.icon : null
       };
     }
     this.dispatchEvent(new CustomEvent("select", { detail }));

@@ -1,38 +1,144 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
     <apiVersion>65.0</apiVersion>
     <isExposed>true</isExposed>
     <masterLabel>Polymorphic Lookup (Flow)</masterLabel>
-    <description>Allows searching across multiple objects in Flow screens. Supports single and multi-select modes.</description>
+    <description
+  >Allows searching across multiple objects in Flow screens. Supports single and multi-select modes.</description>
     <targets>
         <target>lightning__FlowScreen</target>
     </targets>
     <targetConfigs>
         <targetConfig targets="lightning__FlowScreen">
-            <property name="label" label="Field Label" type="String" default="Related To" role="inputOnly"/>
-            <property name="objectApiNames" label="Object API Names (CSV)" type="String" description="Comma-separated list (e.g., Account,Contact,Case)" role="inputOnly"/>
-            <property name="iconNames" label="Icon Names (CSV)" type="String" description="Comma-separated list corresponding to objects (e.g., standard:account,standard:contact)" role="inputOnly"/>
-            <property name="subtitleFields" label="Subtitle Fields (CSV)" type="String" description="Comma-separated list of fields to show under the name (e.g., BillingCity,Email)" role="inputOnly"/>
+            <property
+        name="label"
+        label="Field Label"
+        type="String"
+        default="Related To"
+        role="inputOnly"
+      />
+            <property
+        name="objectApiNames"
+        label="Object API Names (CSV)"
+        type="String"
+        description="Comma-separated list (e.g., Account,Contact,Case)"
+        role="inputOnly"
+      />
+            <property
+        name="iconNames"
+        label="Icon Names (CSV)"
+        type="String"
+        description="Comma-separated list corresponding to objects (e.g., standard:account,standard:contact)"
+        role="inputOnly"
+      />
+            <property
+        name="subtitleFields"
+        label="Subtitle Fields (CSV)"
+        type="String"
+        description="Comma-separated list of fields to show under the name (e.g., BillingCity,Email)"
+        role="inputOnly"
+      />
 
-            <property name="filterJson" label="Filter Configuration (JSON)" type="String" description='JSON Object mapping API Names to WHERE clauses. Example: {"Account": "BillingCity = &#39;New York&#39;"}' role="inputOnly"/>
+            <property
+        name="filterJson"
+        label="Filter Configuration (JSON)"
+        type="String"
+        description='JSON Object mapping API Names to WHERE clauses. Example: {"Account": "BillingCity = &#39;New York&#39;"}'
+        role="inputOnly"
+      />
 
-            <property name="required" label="Required" type="Boolean" default="false" role="inputOnly"/>
-            <property name="showCreate" label="Show New Record Option" type="Boolean" default="false" description="Shows a &apos;New {Object}&apos; option in the search dropdown" role="inputOnly"/>
-            <property name="dropdownLimit" label="Dropdown Result Limit" type="Integer" default="5" description="Max records shown in the inline dropdown" role="inputOnly"/>
-            <property name="modalLimit" label="Modal Result Limit" type="Integer" default="50" description="Max records shown in the Show All modal" role="inputOnly"/>
-            <property name="placeholder" label="Placeholder Text" type="String" description="Overrides the default placeholder (e.g., Search Accounts...)" role="inputOnly"/>
+            <property
+        name="required"
+        label="Required"
+        type="Boolean"
+        default="false"
+        role="inputOnly"
+      />
+            <property
+        name="showCreate"
+        label="Show New Record Option"
+        type="Boolean"
+        default="false"
+        description="Shows a &apos;New {Object}&apos; option in the search dropdown"
+        role="inputOnly"
+      />
+            <property
+        name="dropdownLimit"
+        label="Dropdown Result Limit"
+        type="Integer"
+        default="5"
+        description="Max records shown in the inline dropdown"
+        role="inputOnly"
+      />
+            <property
+        name="modalLimit"
+        label="Modal Result Limit"
+        type="Integer"
+        default="50"
+        description="Max records shown in the Show All modal"
+        role="inputOnly"
+      />
+            <property
+        name="placeholder"
+        label="Placeholder Text"
+        type="String"
+        description="Overrides the default placeholder (e.g., Search Accounts...)"
+        role="inputOnly"
+      />
 
-            <property name="multiSelect" label="Multi-Select" type="Boolean" default="false" description="Allows selecting multiple records" role="inputOnly"/>
-            <property name="allowCrossObjectSelection" label="Allow Cross-Object Selection" type="Boolean" default="true" description="When multi-select is on, allows selecting records from different object types. When false, object switcher locks after first selection." role="inputOnly"/>
-            <property name="maxSelections" label="Maximum Selections" type="Integer" description="Caps the number of records that can be selected. Leave blank for unlimited." role="inputOnly"/>
+            <property
+        name="multiSelect"
+        label="Multi-Select"
+        type="Boolean"
+        default="false"
+        description="Allows selecting multiple records"
+        role="inputOnly"
+      />
+            <property
+        name="allowCrossObjectSelection"
+        label="Allow Cross-Object Selection"
+        type="Boolean"
+        default="true"
+        description="When multi-select is on, allows selecting records from different object types. When false, object switcher locks after first selection."
+        role="inputOnly"
+      />
+            <property
+        name="maxSelections"
+        label="Maximum Selections"
+        type="Integer"
+        description="Caps the number of records that can be selected. Leave blank for unlimited."
+        role="inputOnly"
+      />
 
             <!-- Single-select outputs -->
-            <property name="selectedRecordId" label="Output: Selected Record ID" type="String" role="outputOnly"/>
-            <property name="selectedObjectType" label="Output: Selected Object API Name" type="String" role="outputOnly"/>
+            <property
+        name="selectedRecordId"
+        label="Output: Selected Record ID"
+        type="String"
+        role="outputOnly"
+      />
+            <property
+        name="selectedObjectType"
+        label="Output: Selected Object API Name"
+        type="String"
+        role="outputOnly"
+      />
 
             <!-- Multi-select outputs (CSV strings) -->
-            <property name="selectedRecordIds" label="Output: Selected Record IDs (CSV)" type="String" description="Comma-separated list of selected record IDs. Use a Loop or custom Apex to split." role="outputOnly"/>
-            <property name="selectedObjectTypes" label="Output: Selected Object Types (CSV)" type="String" description="Comma-separated list of object API names, parallel to selectedRecordIds." role="outputOnly"/>
+            <property
+        name="selectedRecordIds"
+        label="Output: Selected Record IDs (CSV)"
+        type="String"
+        description="Comma-separated list of selected record IDs. Use a Loop or custom Apex to split."
+        role="outputOnly"
+      />
+            <property
+        name="selectedObjectTypes"
+        label="Output: Selected Object Types (CSV)"
+        type="String"
+        description="Comma-separated list of object API names, parallel to selectedRecordIds."
+        role="outputOnly"
+      />
         </targetConfig>
     </targetConfigs>
 </LightningComponentBundle>

@@ -42,6 +42,7 @@ This is the core reusable component. It is intentionally **not exposed** (`isExp
 ### What it does
 
 A combobox-style lookup field that lets the user search across **one or more Salesforce object types** and select a record. Features:
+
 - Object-type switcher (hidden when only one object is configured)
 - Throttled search with dropdown (limit 5) and "Show All" modal (limit 50)
 - `filterConfig` per-object SOQL WHERE clause injection
@@ -50,17 +51,18 @@ A combobox-style lookup field that lets the user search across **one or more Sal
 
 ### `@api` surface (inputs/outputs)
 
-| Property | Type | Description |
-|---|---|---|
-| `label` | String | Field label. Default: `"Related To"` |
-| `objectOptions` | Array | Array of object config objects (see shape below) |
-| `required` | Boolean | Shows red asterisk |
-| `filterConfig` | Object | Map of `{ 'ObjectApiName': 'SOQL WHERE clause' }` |
-| `showCreate` | Boolean | Shows "New {Object}" option in dropdown |
+| Property        | Type    | Description                                       |
+| --------------- | ------- | ------------------------------------------------- |
+| `label`         | String  | Field label. Default: `"Related To"`              |
+| `objectOptions` | Array   | Array of object config objects (see shape below)  |
+| `required`      | Boolean | Shows red asterisk                                |
+| `filterConfig`  | Object  | Map of `{ 'ObjectApiName': 'SOQL WHERE clause' }` |
+| `showCreate`    | Boolean | Shows "New {Object}" option in dropdown           |
 
 **Event emitted:** `select` — `event.detail = { recordId, objectType }`
 
 **`objectOptions` item shape:**
+
 ```js
 {
     label: 'Account',         // Display label
@@ -76,20 +78,24 @@ A combobox-style lookup field that lets the user search across **one or more Sal
 ## Consumption Patterns
 
 ### 1. LWC-to-LWC (JS config)
+
 Pass a JS array to `object-options` and a plain JS object to `filter-config`. Listen for the `onselect` event.
 
 ### 2. Flow Screen Component
+
 Use `polymorphicLookupFlowWrapper` — it accepts comma-delimited string inputs (`objectApiNames`, `iconNames`, `subtitleFields`) suitable for Flow Builder text fields, plus a `filterJson` string (JSON-stringified filter map). It implements the full Flow validation contract: `validate()`, `setCustomValidity()`, `reportValidity()`.
 
 ---
 
 ## Apex Controller: `PolymorphicLookupController`
 
-Two `@AuraEnabled` methods:
+Three `@AuraEnabled` methods:
 
 - **`searchRecords`** (`cacheable=true`): Dynamic SOQL against any object. Uses `Database.queryWithBinds` + `AccessLevel.USER_MODE` for FLS/CRUD enforcement. The `whereClause` parameter is appended as a raw string fragment — it must come from trusted admin config (Flow input / LWC property), **not** from end-user input.
 
-- **`getLatestCreatedRecord`**: Non-cacheable. Fetches the most recent record created in the last 10 seconds, used after the "New Record" navigation popup closes.
+- **`getRecordById`** (`cacheable=true`): Fetches a single record by ID for pre-population of the component when a `value` is set externally.
+
+- **`getLatestCreatedRecord`**: Non-cacheable. Fetches the most recent record created in the last 30 seconds by the current user, used after the "New Record" navigation popup closes.
 
 The `whereClause` in `searchRecords` is the one area that cannot use bind variables (SOQL fragments must be concatenated). Keep this in mind when extending filter support.
 

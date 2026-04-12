@@ -40,16 +40,17 @@ Pass a JS array to `object-options` and listen for the `onselect` event.
 
 ```html
 <c-polymorphic-lookup
-    label="Related To"
-    object-options={objectOptions}
-    filter-config={filterConfig}
-    required
-    show-create
-    dropdown-limit="5"
-    modal-limit="50"
-    field-level-help="Select the record this activity is related to."
-    message-when-value-missing="Please select a record."
-    onselect={handleSelect}>
+  label="Related To"
+  object-options="{objectOptions}"
+  filter-config="{filterConfig}"
+  required
+  show-create
+  dropdown-limit="5"
+  modal-limit="50"
+  field-level-help="Select the record this activity is related to."
+  message-when-value-missing="Please select a record."
+  onselect="{handleSelect}"
+>
 </c-polymorphic-lookup>
 ```
 
@@ -92,14 +93,20 @@ The component implements the same API as LWC base form components:
 
 ```js
 // check without showing UI
-const isValid = this.template.querySelector('c-polymorphic-lookup').checkValidity();
+const isValid = this.template
+  .querySelector("c-polymorphic-lookup")
+  .checkValidity();
 
 // trigger inline error display and return validity
-const isValid = this.template.querySelector('c-polymorphic-lookup').reportValidity();
+const isValid = this.template
+  .querySelector("c-polymorphic-lookup")
+  .reportValidity();
 
 // set a programmatic error (empty string clears)
-this.template.querySelector('c-polymorphic-lookup').setCustomValidity('Must select a closed-won opportunity.');
-this.template.querySelector('c-polymorphic-lookup').reportValidity();
+this.template
+  .querySelector("c-polymorphic-lookup")
+  .setCustomValidity("Must select a closed-won opportunity.");
+this.template.querySelector("c-polymorphic-lookup").reportValidity();
 ```
 
 #### Pre-population
@@ -107,17 +114,19 @@ this.template.querySelector('c-polymorphic-lookup').reportValidity();
 ```html
 <!-- Single-object: object is auto-inferred -->
 <c-polymorphic-lookup
-    label="Account"
-    object-options={singleObjectOptions}
-    value={existingAccountId}>
+  label="Account"
+  object-options="{singleObjectOptions}"
+  value="{existingAccountId}"
+>
 </c-polymorphic-lookup>
 
 <!-- Multi-object: must also supply valueObjectApiName -->
 <c-polymorphic-lookup
-    label="Related To"
-    object-options={multiObjectOptions}
-    value={existingRecordId}
-    value-object-api-name="Contact">
+  label="Related To"
+  object-options="{multiObjectOptions}"
+  value="{existingRecordId}"
+  value-object-api-name="Contact"
+>
 </c-polymorphic-lookup>
 ```
 
@@ -129,11 +138,12 @@ Enable multi-select with the `multi-select` attribute. Selected records render a
 
 ```html
 <c-polymorphic-lookup
-    label="Related Records"
-    object-options={objectOptions}
-    multi-select
-    max-selections="5"
-    onselect={handleSelect}>
+  label="Related Records"
+  object-options="{objectOptions}"
+  multi-select
+  max-selections="5"
+  onselect="{handleSelect}"
+>
 </c-polymorphic-lookup>
 ```
 
@@ -151,10 +161,11 @@ handleSelect(event) {
 
 ```html
 <c-polymorphic-lookup
-    object-options={multiObjectOptions}
-    multi-select
-    allow-cross-object-selection={false}
-    onselect={handleSelect}>
+  object-options="{multiObjectOptions}"
+  multi-select
+  allow-cross-object-selection="{false}"
+  onselect="{handleSelect}"
+>
 </c-polymorphic-lookup>
 ```
 
@@ -162,17 +173,18 @@ handleSelect(event) {
 
 ```html
 <c-polymorphic-lookup
-    object-options={objectOptions}
-    multi-select
-    show-pills={false}
-    onselect={handleSelect}>
+  object-options="{objectOptions}"
+  multi-select
+  show-pills="{false}"
+  onselect="{handleSelect}"
+>
 </c-polymorphic-lookup>
 ```
 
 **Programmatic clear:**
 
 ```js
-this.template.querySelector('c-polymorphic-lookup').clearAll();
+this.template.querySelector("c-polymorphic-lookup").clearAll();
 ```
 
 ---
@@ -181,27 +193,29 @@ this.template.querySelector('c-polymorphic-lookup').clearAll();
 
 Drag **Polymorphic Lookup (Flow)** onto a Flow screen. No JavaScript required.
 
-| Property | Type | Description |
-|---|---|---|
-| **Field Label** | Text | Label shown above the field |
-| **Object API Names (CSV)** | Text | e.g. `Account,Contact,Case` |
-| **Icon Names (CSV)** | Text | e.g. `standard:account,standard:contact,standard:case` |
-| **Subtitle Fields (CSV)** | Text | e.g. `Phone,Email,Status` |
-| **Filter Configuration (JSON)** | Text | e.g. `{"Account": "Type = 'Customer'"}` |
-| **Required** | Boolean | Enables built-in Flow validation |
-| **Show New Record Option** | Boolean | Adds "New {Object}" to dropdown |
-| **Dropdown Result Limit** | Number | Default: 5 |
-| **Modal Result Limit** | Number | Default: 50 |
-| **Placeholder Text** | Text | Overrides auto-generated placeholder |
-| **Multi-Select** | Boolean | Allows selecting multiple records |
+| Property                         | Type    | Description                                                           |
+| -------------------------------- | ------- | --------------------------------------------------------------------- |
+| **Field Label**                  | Text    | Label shown above the field                                           |
+| **Object API Names (CSV)**       | Text    | e.g. `Account,Contact,Case`                                           |
+| **Icon Names (CSV)**             | Text    | e.g. `standard:account,standard:contact,standard:case`                |
+| **Subtitle Fields (CSV)**        | Text    | e.g. `Phone,Email,Status`                                             |
+| **Filter Configuration (JSON)**  | Text    | e.g. `{"Account": "Type = 'Customer'"}`                               |
+| **Required**                     | Boolean | Enables built-in Flow validation                                      |
+| **Show New Record Option**       | Boolean | Adds "New {Object}" to dropdown                                       |
+| **Dropdown Result Limit**        | Number  | Default: 5                                                            |
+| **Modal Result Limit**           | Number  | Default: 50                                                           |
+| **Placeholder Text**             | Text    | Overrides auto-generated placeholder                                  |
+| **Multi-Select**                 | Boolean | Allows selecting multiple records                                     |
 | **Allow Cross-Object Selection** | Boolean | When `false`, locks object switcher after first pick (default `true`) |
-| **Maximum Selections** | Number | Caps the number of selections; blank = unlimited |
+| **Maximum Selections**           | Number  | Caps the number of selections; blank = unlimited                      |
 
 **Outputs — single-select** (use in subsequent Flow elements):
+
 - `{!YourComponentName.selectedRecordId}` — 18-char record ID
 - `{!YourComponentName.selectedObjectType}` — SObject API name
 
 **Outputs — multi-select:**
+
 - `{!YourComponentName.selectedRecordIds}` — comma-separated record IDs
 - `{!YourComponentName.selectedObjectTypes}` — comma-separated SObject API names (parallel to IDs)
 
@@ -211,48 +225,48 @@ Drag **Polymorphic Lookup (Flow)** onto a Flow screen. No JavaScript required.
 
 **Single-select / shared:**
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `label` | String | `"Related To"` | Field label |
-| `objectOptions` | Array | `[]` | Object config array (see shape above) |
-| `required` | Boolean | `false` | Shows red asterisk; triggers validation |
-| `filterConfig` | Object | `{}` | Per-object SOQL WHERE clauses |
-| `showCreate` | Boolean | `false` | Adds "New {Object}" option |
-| `disabled` | Boolean | `false` | Disables all interaction |
-| `value` | String \| String[] | `null` | Pre-populate: record ID (single) or array of IDs (multi-select) |
-| `valueObjectApiName` | String | `null` | Required for `value` pre-population in multi-object mode |
-| `variant` | String | `"standard"` | `"standard"` or `"label-hidden"` |
-| `placeholder` | String | auto | Overrides auto-generated placeholder |
-| `dropdownLimit` | Integer | `5` | Max records in inline dropdown |
-| `modalLimit` | Integer | `50` | Max records in "Show All" modal |
-| `fieldLevelHelp` | String | `null` | Tooltip next to label |
-| `messageWhenValueMissing` | String | `"Complete this field."` | Validation error text |
+| Property                  | Type               | Default                  | Description                                                     |
+| ------------------------- | ------------------ | ------------------------ | --------------------------------------------------------------- |
+| `label`                   | String             | `"Related To"`           | Field label                                                     |
+| `objectOptions`           | Array              | `[]`                     | Object config array (see shape above)                           |
+| `required`                | Boolean            | `false`                  | Shows red asterisk; triggers validation                         |
+| `filterConfig`            | Object             | `{}`                     | Per-object SOQL WHERE clauses                                   |
+| `showCreate`              | Boolean            | `false`                  | Adds "New {Object}" option                                      |
+| `disabled`                | Boolean            | `false`                  | Disables all interaction                                        |
+| `value`                   | String \| String[] | `null`                   | Pre-populate: record ID (single) or array of IDs (multi-select) |
+| `valueObjectApiName`      | String             | `null`                   | Required for `value` pre-population in multi-object mode        |
+| `variant`                 | String             | `"standard"`             | `"standard"` or `"label-hidden"`                                |
+| `placeholder`             | String             | auto                     | Overrides auto-generated placeholder                            |
+| `dropdownLimit`           | Integer            | `5`                      | Max records in inline dropdown                                  |
+| `modalLimit`              | Integer            | `50`                     | Max records in "Show All" modal                                 |
+| `fieldLevelHelp`          | String             | `null`                   | Tooltip next to label                                           |
+| `messageWhenValueMissing` | String             | `"Complete this field."` | Validation error text                                           |
 
 **Multi-select:**
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `multiSelect` | Boolean | `false` | Enables multi-select mode |
-| `allowCrossObjectSelection` | Boolean | `true` | When `false`, locks object switcher after first pick |
-| `showPills` | Boolean | `true` | When `false`, parent handles display; component still tracks state and fires events |
-| `maxSelections` | Integer | `null` | Max number of selections; `null` = unlimited |
+| Property                    | Type    | Default | Description                                                                         |
+| --------------------------- | ------- | ------- | ----------------------------------------------------------------------------------- |
+| `multiSelect`               | Boolean | `false` | Enables multi-select mode                                                           |
+| `allowCrossObjectSelection` | Boolean | `true`  | When `false`, locks object switcher after first pick                                |
+| `showPills`                 | Boolean | `true`  | When `false`, parent handles display; component still tracks state and fires events |
+| `maxSelections`             | Integer | `null`  | Max number of selections; `null` = unlimited                                        |
 
-| Method | Returns | Description |
-|---|---|---|
-| `checkValidity()` | Boolean | `true` if valid; no UI change |
-| `reportValidity()` | Boolean | Shows/hides inline error; returns validity |
-| `setCustomValidity(msg)` | void | Set or clear a custom error string |
-| `clearAll()` | void | Clears all selections in multi-select mode |
+| Method                   | Returns | Description                                |
+| ------------------------ | ------- | ------------------------------------------ |
+| `checkValidity()`        | Boolean | `true` if valid; no UI change              |
+| `reportValidity()`       | Boolean | Shows/hides inline error; returns validity |
+| `setCustomValidity(msg)` | void    | Set or clear a custom error string         |
+| `clearAll()`             | void    | Clears all selections in multi-select mode |
 
-| Getter | Returns | Description |
-|---|---|---|
-| `value` | String \| String[] | Selected record ID (single) or array of IDs (multi) |
-| `values` | String[] | Always an array — stable type for consumers regardless of mode |
+| Getter   | Returns            | Description                                                    |
+| -------- | ------------------ | -------------------------------------------------------------- |
+| `value`  | String \| String[] | Selected record ID (single) or array of IDs (multi)            |
+| `values` | String[]           | Always an array — stable type for consumers regardless of mode |
 
 **Events:**
 
-| Event | Detail (single-select) | Description |
-|---|---|---|
+| Event    | Detail (single-select)                           | Description                                                     |
+| -------- | ------------------------------------------------ | --------------------------------------------------------------- |
 | `select` | `{ recordId, objectType, recordName, iconName }` | Fires on selection and on clear (`recordId` is `null` on clear) |
 
 In multi-select mode the same `select` event fires with an enriched detail:
@@ -275,9 +289,9 @@ Override on a parent element or via Experience Cloud theming:
 
 ```css
 c-polymorphic-lookup {
-    --polymorphic-lookup-dropdown-max-height: 400px;
-    --polymorphic-lookup-focus-color: #1b96ff;
-    --polymorphic-lookup-z-index: 9000;
+  --polymorphic-lookup-dropdown-max-height: 400px;
+  --polymorphic-lookup-focus-color: #1b96ff;
+  --polymorphic-lookup-z-index: 9000;
 }
 ```
 
@@ -287,11 +301,11 @@ c-polymorphic-lookup {
 
 `PolymorphicLookupController` exposes two methods:
 
-| Method | Cacheable | Description |
-|---|---|---|
-| `searchRecords` | Yes | Dynamic SOQL across any object. Uses `Database.queryWithBinds` + `AccessLevel.USER_MODE` for FLS/CRUD enforcement |
-| `getLatestCreatedRecord` | No | Fetches the most recent record created by the current user in the last 30 seconds (used after "New Record" navigation) |
-| `getRecordById` | Yes | Resolves a record ID to display name + subtitle (used for `value` pre-population) |
+| Method                   | Cacheable | Description                                                                                                            |
+| ------------------------ | --------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `searchRecords`          | Yes       | Dynamic SOQL across any object. Uses `Database.queryWithBinds` + `AccessLevel.USER_MODE` for FLS/CRUD enforcement      |
+| `getLatestCreatedRecord` | No        | Fetches the most recent record created by the current user in the last 30 seconds (used after "New Record" navigation) |
+| `getRecordById`          | Yes       | Resolves a record ID to display name + subtitle (used for `value` pre-population)                                      |
 
 > **Security note:** The `whereClause` parameter in `searchRecords` is appended as a raw SOQL fragment and must come from **trusted admin config** (Flow input / LWC property), not from end-user input.
 

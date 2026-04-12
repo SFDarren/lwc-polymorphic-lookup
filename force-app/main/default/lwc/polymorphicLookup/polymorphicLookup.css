@@ -2,89 +2,89 @@
 
 /* --- CSS Custom Properties (theming hooks for consumers) --- */
 :host {
-    --polymorphic-lookup-dropdown-max-height: 300px;
-    --polymorphic-lookup-focus-color: #006dcc;
-    --polymorphic-lookup-z-index: 9999;
+  --polymorphic-lookup-dropdown-max-height: 300px;
+  --polymorphic-lookup-focus-color: #006dcc;
+  --polymorphic-lookup-z-index: 9999;
 }
 
 /* --- Search State (Grouped) --- */
 
 .slds-combobox-group {
-    display: flex;
+  display: flex;
 }
 
 /* Object Switcher Button: Auto width to fit text + icon */
 .object-switcher-btn {
-    display: flex;
-    align-items: center;
-    height: 32px;
-    cursor: pointer;
-    padding: 0 0.5rem; /* Make room for the down arrow */
+  display: flex;
+  align-items: center;
+  height: 32px;
+  cursor: pointer;
+  padding: 0 0.5rem; /* Make room for the down arrow */
 }
 
 .slds-combobox_object-switcher .slds-combobox__input,
 .slds-combobox--object-switcher .slds-combobox__input {
-    width: 4rem !important;
+  width: 4rem !important;
 }
 
 /* Ensure borders merge correctly */
 .slds-combobox-addon_start .slds-input_faux {
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-    border-right: 0;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-right: 0;
 }
 
 .slds-combobox-addon_end .slds-input {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
 }
 
 /* --- Selected State (Pill) --- */
 
 /* Padding to separate icon from left border */
 .slds-combobox__input-entity-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    z-index: 2;
-    padding-left: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  z-index: 2;
+  padding-left: 0.5rem;
 }
 
 /* Text alignment in pill */
 .slds-combobox__input-value {
-    display: flex;
-    align-items: center;
-    padding-left: 2.5rem;
+  display: flex;
+  align-items: center;
+  padding-left: 2.5rem;
 }
 
 /* Manual Focus State */
 .has-focus .slds-combobox__form-element {
-    border-color: var(--polymorphic-lookup-focus-color, #006dcc);
-    box-shadow: 0 0 3px var(--polymorphic-lookup-focus-color, #006dcc);
+  border-color: var(--polymorphic-lookup-focus-color, #006dcc);
+  box-shadow: 0 0 3px var(--polymorphic-lookup-focus-color, #006dcc);
 }
 
 /* Help Text */
 .slds-form-element__help {
-    margin-top: 0.25rem;
-    display: flex;
-    align-items: center;
+  margin-top: 0.25rem;
+  display: flex;
+  align-items: center;
 }
 
 /* General Utils */
 .slds-icon-text-default {
-    fill: #747474;
+  fill: #747474;
 }
 
 .slds-dropdown_fluid {
-    max-height: var(--polymorphic-lookup-dropdown-max-height, 300px);
-    overflow-y: auto;
-    z-index: var(--polymorphic-lookup-z-index, 9999);
+  max-height: var(--polymorphic-lookup-dropdown-max-height, 300px);
+  overflow-y: auto;
+  z-index: var(--polymorphic-lookup-z-index, 9999);
 }
 
 /* Force the container to look clickable */
 .object-switcher-trigger {
-    cursor: pointer;
+  cursor: pointer;
 }
 
 /* Make the icon "invisible" to mouse events. 
@@ -94,42 +94,60 @@
 */
 
 lightning-icon.slds-input__icon {
-    pointer-events: none;
+  pointer-events: none;
 }
 
 .single-object.slds-combobox-addon_end .slds-combobox__input,
 .single-object.slds-combobox-addon--end .slds-combobox__input {
-    border-start-end-radius: var(--slds-s-input-radius-border);
-    border-end-end-radius: var(--slds-s-input-radius-border);
-    border-start-start-radius: var(--slds-s-input-radius-border);
-    border-end-start-radius: var(--slds-s-input-radius-border);
+  border-start-end-radius: var(--slds-s-input-radius-border);
+  border-end-end-radius: var(--slds-s-input-radius-border);
+  border-start-start-radius: var(--slds-s-input-radius-border);
+  border-end-start-radius: var(--slds-s-input-radius-border);
 }
 
 /* Disabled state */
 :host([disabled]) .slds-combobox__input,
 :host([disabled]) .object-switcher-btn,
 :host([disabled]) .slds-input_faux {
-    opacity: 0.5;
-    cursor: not-allowed;
-    pointer-events: none;
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 /* --- Multi-Select Pill Container --- */
 .poly-pill-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem;
-    padding: 0.25rem 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.25rem 0;
 }
 
 /* Locked object switcher — visual indicator */
 .object-switcher-btn[disabled] {
-    opacity: 0.5;
-    cursor: not-allowed;
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Max-selections reached — dim the input */
 .slds-combobox__input:disabled {
-    background-color: var(--slds-g-color-neutral-base-95, #f3f3f3);
-    cursor: not-allowed;
+  background-color: var(--slds-g-color-neutral-base-95, #f3f3f3);
+  cursor: not-allowed;
+}
+
+/* --- Template Utility Classes --- */
+
+/* Required asterisk using SLDS error color token */
+.poly-required-asterisk {
+  color: var(--slds-g-color-error-base-40, #ea001e);
+}
+
+/* Helptext icon nudge to vertically align with label text */
+.poly-helptext-nudge {
+  position: relative;
+  top: -3px;
+}
+
+/* "Show All Results" bold label */
+.poly-show-all-text {
+  font-weight: 700;
 }
