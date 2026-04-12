@@ -199,7 +199,12 @@ private class PolymorphicLookupControllerTest {
 
   @IsTest
   static void getLatestCreatedRecord_findsJustCreatedRecord() {
-    // Insert inside the test so CreatedDate falls within the 30-second window
+    // Push @TestSetup records outside the 30-second window so only the
+    // freshly inserted record is returned by the CreatedDate filter.
+    for (Account acc : [SELECT Id FROM Account]) {
+      Test.setCreatedDate(acc.Id, Datetime.now().addMinutes(-5));
+    }
+
     Account fresh = new Account(Name = 'Just Created Corp');
     insert fresh;
 
