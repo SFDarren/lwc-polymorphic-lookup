@@ -10,7 +10,7 @@
 A production-ready, plug-and-play combobox field for Salesforce LWC and Flow screens.
 Search across **one or more SObject types**, select a record, and receive a rich event with the record's ID, name, object type, and icon.
 
-**Built by [Darren Seet](https://github.com/SFDarren)**
+**Built by [Darren Seet](https://github.com/SFDarren), with the help of Claude Code**
 
 </div>
 
