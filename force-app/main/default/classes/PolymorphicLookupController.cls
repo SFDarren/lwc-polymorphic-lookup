@@ -167,6 +167,9 @@ public with sharing class PolymorphicLookupController {
       : null;
   }
 
+  @TestVisible
+  private static List<SObject> mockQueryRows;
+
   // Executes a dynamic SOQL query using bind variables and USER_MODE to enforce FLS and sharing.
   private static List<LookupRecord> executeQueryWithBinds(
     String query,
@@ -177,11 +180,9 @@ public with sharing class PolymorphicLookupController {
   ) {
     List<LookupRecord> results = new List<LookupRecord>();
     try {
-      List<SObject> rows = Database.queryWithBinds(
-        query,
-        bindMap,
-        AccessLevel.USER_MODE
-      );
+      List<SObject> rows = mockQueryRows != null
+        ? mockQueryRows
+        : Database.queryWithBinds(query, bindMap, AccessLevel.USER_MODE);
       for (SObject so : rows) {
         LookupRecord rec = new LookupRecord();
         rec.id = (String) so.get('Id');

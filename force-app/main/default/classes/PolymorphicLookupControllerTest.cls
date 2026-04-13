@@ -1,14 +1,22 @@
 @IsTest
 private class PolymorphicLookupControllerTest {
-  // Account + Name: universally available in every Salesforce org.
-  // Phone: standard Account field, always exists — used to test subtitle mapping without
-  // requiring custom fields or setting values (tests the null-value path automatically).
-  @TestSetup
-  static void setupData() {
-    insert new List<Account>{
-      new Account(Name = 'Alpha Testing Corp'),
-      new Account(Name = 'Beta Industries')
+  // ---------------------------------------------------------------------------
+  // Helpers — build in-memory SObjects via JSON (no DML, no org dependencies)
+  // ---------------------------------------------------------------------------
+
+  private static final String MOCK_ID_1 = '001000000000001AAA';
+  private static final String MOCK_ID_2 = '001000000000002AAA';
+
+  private static Account mockAccount(String id, String name, String phone) {
+    Map<String, Object> fields = new Map<String, Object>{
+      'attributes' => new Map<String, String>{ 'type' => 'Account' },
+      'Id' => id,
+      'Name' => name
     };
+    if (phone != null) {
+      fields.put('Phone', phone);
+    }
+    return (Account) JSON.deserialize(JSON.serialize(fields), Account.class);
   }
 
   // -------------------------------------------------------------------------
@@ -17,6 +25,10 @@ private class PolymorphicLookupControllerTest {
 
   @IsTest
   static void searchRecords_returnsMatchingRecords() {
+    PolymorphicLookupController.mockQueryRows = new List<SObject>{
+      mockAccount(MOCK_ID_1, 'Alpha Testing Corp', null)
+    };
+
     List<PolymorphicLookupController.LookupRecord> results = PolymorphicLookupController.searchRecords(
       'Account',
       'Alpha',
@@ -37,7 +49,11 @@ private class PolymorphicLookupControllerTest {
 
   @IsTest
   static void searchRecords_blankSearchKey_returnsRecords() {
-    // Blank key → no Name LIKE filter → returns records ordered by LastViewedDate DESC
+    PolymorphicLookupController.mockQueryRows = new List<SObject>{
+      mockAccount(MOCK_ID_1, 'Alpha Testing Corp', null),
+      mockAccount(MOCK_ID_2, 'Beta Industries', null)
+    };
+
     List<PolymorphicLookupController.LookupRecord> results = PolymorphicLookupController.searchRecords(
       'Account',
       '',
@@ -47,15 +63,19 @@ private class PolymorphicLookupControllerTest {
       10
     );
 
-    Assert.isTrue(
-      results.size() >= 2,
-      'Blank search should return all records up to limit'
+    Assert.areEqual(
+      2,
+      results.size(),
+      'Blank search should return all mocked records'
     );
   }
 
   @IsTest
   static void searchRecords_withSubtitleField() {
-    // Phone is standard on Account and was not set in setup, so subtitle = empty string
+    PolymorphicLookupController.mockQueryRows = new List<SObject>{
+      mockAccount(MOCK_ID_1, 'Alpha Testing Corp', '555-1234')
+    };
+
     List<PolymorphicLookupController.LookupRecord> results = PolymorphicLookupController.searchRecords(
       'Account',
       'Alpha',
@@ -66,11 +86,38 @@ private class PolymorphicLookupControllerTest {
     );
 
     Assert.areEqual(1, results.size());
-    Assert.isNotNull(results[0].subtitle);
+    Assert.areEqual('555-1234', results[0].subtitle);
+  }
+
+  @IsTest
+  static void searchRecords_withSubtitleField_nullValue() {
+    PolymorphicLookupController.mockQueryRows = new List<SObject>{
+      mockAccount(MOCK_ID_1, 'Alpha Testing Corp', null)
+    };
+
+    List<PolymorphicLookupController.LookupRecord> results = PolymorphicLookupController.searchRecords(
+      'Account',
+      'Alpha',
+      'standard:account',
+      'Phone',
+      '',
+      10
+    );
+
+    Assert.areEqual(1, results.size());
+    Assert.areEqual(
+      '',
+      results[0].subtitle,
+      'Null subtitle field value → empty string'
+    );
   }
 
   @IsTest
   static void searchRecords_withWhereClause() {
+    PolymorphicLookupController.mockQueryRows = new List<SObject>{
+      mockAccount(MOCK_ID_2, 'Beta Industries', null)
+    };
+
     List<PolymorphicLookupController.LookupRecord> results = PolymorphicLookupController.searchRecords(
       'Account',
       '',
@@ -86,6 +133,10 @@ private class PolymorphicLookupControllerTest {
 
   @IsTest
   static void searchRecords_respectsQueryLimit() {
+    PolymorphicLookupController.mockQueryRows = new List<SObject>{
+      mockAccount(MOCK_ID_1, 'Alpha Testing Corp', null)
+    };
+
     List<PolymorphicLookupController.LookupRecord> results = PolymorphicLookupController.searchRecords(
       'Account',
       '',
@@ -100,6 +151,11 @@ private class PolymorphicLookupControllerTest {
 
   @IsTest
   static void searchRecords_nullQueryLimit_defaultsToFive() {
+    PolymorphicLookupController.mockQueryRows = new List<SObject>{
+      mockAccount(MOCK_ID_1, 'Acc 1', null),
+      mockAccount(MOCK_ID_2, 'Acc 2', null)
+    };
+
     List<PolymorphicLookupController.LookupRecord> results = PolymorphicLookupController.searchRecords(
       'Account',
       '',
@@ -114,7 +170,10 @@ private class PolymorphicLookupControllerTest {
 
   @IsTest
   static void searchRecords_nullSubtitle_usesObjectNameAsFallback() {
-    // When subtitleField is null, subtitle should be the object API name
+    PolymorphicLookupController.mockQueryRows = new List<SObject>{
+      mockAccount(MOCK_ID_1, 'Alpha Testing Corp', null)
+    };
+
     List<PolymorphicLookupController.LookupRecord> results = PolymorphicLookupController.searchRecords(
       'Account',
       'Alpha',
@@ -128,39 +187,51 @@ private class PolymorphicLookupControllerTest {
     Assert.areEqual('Account', results[0].subtitle);
   }
 
+  @IsTest
+  static void searchRecords_emptyResults() {
+    PolymorphicLookupController.mockQueryRows = new List<SObject>();
+
+    List<PolymorphicLookupController.LookupRecord> results = PolymorphicLookupController.searchRecords(
+      'Account',
+      'Nonexistent',
+      'standard:account',
+      null,
+      '',
+      10
+    );
+
+    Assert.areEqual(0, results.size(), 'No matches → empty list');
+  }
+
   // -------------------------------------------------------------------------
   // getRecordById
   // -------------------------------------------------------------------------
 
   @IsTest
   static void getRecordById_findsExistingRecord() {
-    Account acc = [
-      SELECT Id
-      FROM Account
-      WHERE Name = 'Alpha Testing Corp'
-      LIMIT 1
-    ];
+    PolymorphicLookupController.mockQueryRows = new List<SObject>{
+      mockAccount(MOCK_ID_1, 'Alpha Testing Corp', null)
+    };
 
     List<PolymorphicLookupController.LookupRecord> results = PolymorphicLookupController.getRecordById(
-      acc.Id,
+      MOCK_ID_1,
       'Account',
       'standard:account',
       null
     );
 
     Assert.areEqual(1, results.size());
-    Assert.areEqual(acc.Id, results[0].id);
+    Assert.areEqual(MOCK_ID_1, results[0].id);
     Assert.areEqual('Alpha Testing Corp', results[0].title);
-    Assert.areEqual('Account', results[0].subtitle); // null subtitleField → object name
+    Assert.areEqual('Account', results[0].subtitle);
   }
 
   @IsTest
   static void getRecordById_nonexistentId_returnsEmpty() {
-    String fakeId =
-      Account.SObjectType.getDescribe().getKeyPrefix() + '000000000000';
+    PolymorphicLookupController.mockQueryRows = new List<SObject>();
 
     List<PolymorphicLookupController.LookupRecord> results = PolymorphicLookupController.getRecordById(
-      fakeId,
+      '001000000000000AAA',
       'Account',
       'standard:account',
       null
@@ -175,22 +246,19 @@ private class PolymorphicLookupControllerTest {
 
   @IsTest
   static void getRecordById_withSubtitleField() {
-    Account acc = [
-      SELECT Id
-      FROM Account
-      WHERE Name = 'Alpha Testing Corp'
-      LIMIT 1
-    ];
+    PolymorphicLookupController.mockQueryRows = new List<SObject>{
+      mockAccount(MOCK_ID_1, 'Alpha Testing Corp', '555-1234')
+    };
 
     List<PolymorphicLookupController.LookupRecord> results = PolymorphicLookupController.getRecordById(
-      acc.Id,
+      MOCK_ID_1,
       'Account',
       'standard:account',
       'Phone'
     );
 
     Assert.areEqual(1, results.size());
-    Assert.isNotNull(results[0].subtitle); // Phone was not set → empty string
+    Assert.areEqual('555-1234', results[0].subtitle);
   }
 
   // -------------------------------------------------------------------------
@@ -199,14 +267,9 @@ private class PolymorphicLookupControllerTest {
 
   @IsTest
   static void getLatestCreatedRecord_findsJustCreatedRecord() {
-    // Push @TestSetup records outside the 30-second window so only the
-    // freshly inserted record is returned by the CreatedDate filter.
-    for (Account acc : [SELECT Id FROM Account]) {
-      Test.setCreatedDate(acc.Id, Datetime.now().addMinutes(-5));
-    }
-
-    Account fresh = new Account(Name = 'Just Created Corp');
-    insert fresh;
+    PolymorphicLookupController.mockQueryRows = new List<SObject>{
+      mockAccount(MOCK_ID_1, 'Just Created Corp', null)
+    };
 
     List<PolymorphicLookupController.LookupRecord> results = PolymorphicLookupController.getLatestCreatedRecord(
       'Account',
@@ -220,13 +283,12 @@ private class PolymorphicLookupControllerTest {
 
   @IsTest
   static void getLatestCreatedRecord_wrongUserId_returnsEmpty() {
-    // A syntactically valid but non-matching user ID should return nothing
-    String fakeUserId = '005000000000000AAA';
+    PolymorphicLookupController.mockQueryRows = new List<SObject>();
 
     List<PolymorphicLookupController.LookupRecord> results = PolymorphicLookupController.getLatestCreatedRecord(
       'Account',
       'standard:account',
-      fakeUserId
+      '005000000000000AAA'
     );
 
     Assert.areEqual(0, results.size(), 'Wrong userId should return no records');
