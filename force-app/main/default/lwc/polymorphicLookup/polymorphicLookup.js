@@ -383,7 +383,10 @@ export default class PolymorphicLookup extends NavigationMixin(
   }
 
   get formElementClass() {
-    return `slds-form-element${this._showError && this.errorMessage ? " slds-has-error" : ""}`;
+    let cls = "slds-form-element";
+    if (this._showError && this.errorMessage) cls += " slds-has-error";
+    if (this.disabled) cls += " poly-disabled";
+    return cls;
   }
 
   get errorMessage() {

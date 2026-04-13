@@ -105,13 +105,25 @@ lightning-icon.slds-input__icon {
   border-end-start-radius: var(--slds-s-input-radius-border);
 }
 
-/* Disabled state */
-:host([disabled]) .slds-combobox__input,
-:host([disabled]) .object-switcher-btn,
-:host([disabled]) .slds-input_faux {
-  opacity: 0.5;
+/* Disabled state — match SLDS standard disabled styling */
+.poly-disabled .slds-combobox__input,
+.poly-disabled .object-switcher-btn,
+.poly-disabled .slds-input_faux,
+.poly-disabled .slds-combobox__input-value {
+  background-color: var(--slds-g-color-disabled-container-1, #e5e5e5);
+  color: var(--slds-g-color-disabled-1, #706e6b);
   cursor: not-allowed;
   pointer-events: none;
+}
+
+.poly-disabled .slds-combobox__input-entity-icon,
+.poly-disabled .slds-button_icon {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.poly-disabled .slds-button_icon {
+  opacity: 0.5;
 }
 
 /* --- Multi-Select Pill Container --- */
