@@ -6,6 +6,8 @@ export default class ParentComponent extends LightningElement {
   @track selectionLog = [];
   @track isDisabled = false;
   @track isRequired = false;
+  @track isMultiDisabled = false;
+  @track isMultiRequired = false;
 
   // ── Example 1: Multi-object with filters ──────────────────────────────
   multiObjectOptions = [
@@ -82,6 +84,37 @@ export default class ParentComponent extends LightningElement {
         new ShowToastEvent({
           title: "Valid",
           message: "Selection is valid — ready to submit.",
+          variant: "success"
+        })
+      );
+    }
+  }
+
+  // ── Example 3: Multi-select disabled / required toggles ──────────────
+  get multiDisabledButtonLabel() {
+    return this.isMultiDisabled ? "Enable" : "Disable";
+  }
+
+  handleToggleMultiDisabled() {
+    this.isMultiDisabled = !this.isMultiDisabled;
+  }
+
+  get multiRequiredButtonLabel() {
+    return this.isMultiRequired ? "Make Optional" : "Make Required";
+  }
+
+  handleToggleMultiRequired() {
+    this.isMultiRequired = !this.isMultiRequired;
+  }
+
+  handleCheckMultiValidity() {
+    const lookup = this.template.querySelector('[data-id="example3-lookup"]');
+    const isValid = lookup ? lookup.reportValidity() : true;
+    if (isValid) {
+      this.dispatchEvent(
+        new ShowToastEvent({
+          title: "Valid",
+          message: "Multi-select selection is valid.",
           variant: "success"
         })
       );

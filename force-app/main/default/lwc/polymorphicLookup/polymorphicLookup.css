@@ -134,6 +134,16 @@ lightning-icon.slds-input__icon {
   padding: 0.25rem 0;
 }
 
+.poly-disabled .poly-pill-container lightning-pill {
+  pointer-events: none;
+  --slds-c-pill-color-background: var(
+    --slds-g-color-disabled-container-1,
+    #e5e5e5
+  );
+  --slds-c-pill-color-border: var(--slds-g-color-neutral-base-80, #c9c9c9);
+  --slds-c-pill-text-color: var(--slds-g-color-disabled-1, #706e6b);
+}
+
 /* Locked object switcher — visual indicator */
 .object-switcher-btn[disabled] {
   opacity: 0.5;

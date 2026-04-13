@@ -710,6 +710,7 @@ export default class PolymorphicLookup extends NavigationMixin(
   }
 
   handlePillRemove(event) {
+    if (this.disabled) return;
     const recordId = event.target.name;
     const removed = this._selectedRecords.find((r) => r.id === recordId);
     if (!removed) return;

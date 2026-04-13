@@ -114,14 +114,42 @@
               defaults to <code>true</code>). Capped at 5 selections
               (<code>max-selections="5"</code>).
             </p>
+            <div
+              class="slds-m-bottom_xx-small slds-text-body_small slds-text-color_weak"
+            >
+              disabled={isMultiDisabled} &nbsp;|&nbsp;
+              required={isMultiRequired}
+            </div>
             <c-polymorphic-lookup
+              data-id="example3-lookup"
               label="Related Records"
               object-options={multiSelectObjectOptions}
               multi-select
               max-selections="5"
+              disabled={isMultiDisabled}
+              required={isMultiRequired}
+              message-when-value-missing="Select at least one record."
               onselect={handleLookupSelection}
             >
             </c-polymorphic-lookup>
+            <div class="slds-m-top_small slds-grid slds-gutters_xx-small">
+              <lightning-button
+                label={multiDisabledButtonLabel}
+                onclick={handleToggleMultiDisabled}
+              >
+              </lightning-button>
+              <lightning-button
+                label={multiRequiredButtonLabel}
+                onclick={handleToggleMultiRequired}
+              >
+              </lightning-button>
+              <lightning-button
+                variant="brand"
+                label="Check Validity"
+                onclick={handleCheckMultiValidity}
+              >
+              </lightning-button>
+            </div>
             <p
               class="slds-text-body_small slds-text-color_weak slds-m-top_medium slds-m-bottom_xx-small"
             >
