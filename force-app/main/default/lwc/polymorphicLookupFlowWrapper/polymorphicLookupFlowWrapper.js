@@ -1,21 +1,41 @@
+/**
+ * @module polymorphicLookupFlowWrapper
+ * @description Flow Screen Component wrapper for polymorphicLookup. Accepts
+ *   comma-delimited string inputs suitable for Flow Builder text fields and
+ *   implements the full Flow validation contract (validate / setCustomValidity /
+ *   reportValidity).
+ * @author Darren Seet
+ * @since 2026-04-10
+ * @license MIT
+ */
 import { LightningElement, api, track } from "lwc";
 import { FlowAttributeChangeEvent } from "lightning/flowSupport";
 
 export default class PolymorphicLookupFlowWrapper extends LightningElement {
-  // Flow Inputs
+  /** @api {string} Field label displayed above the lookup */
   @api label;
+  /** @api {string} Comma-separated SObject API names (e.g. "Account,Contact") */
   @api objectApiNames;
+  /** @api {string} Comma-separated SLDS icon names (parallel to objectApiNames) */
   @api iconNames;
+  /** @api {string} Comma-separated subtitle field API names (parallel to objectApiNames) */
   @api subtitleFields;
+  /** @api {boolean} Enables Flow validation */
   @api required = false;
+  /** @api {string} JSON-stringified filter map (e.g. '{"Account": "Type = \'Customer\'"}') */
   @api filterJson;
+  /** @api {boolean} Adds "New {Object}" option in dropdown */
   @api showCreate;
+  /** @api {number} Max records in inline dropdown */
   @api dropdownLimit = 5;
+  /** @api {number} Max records in "Show All" modal */
   @api modalLimit = 50;
+  /** @api {string} Overrides auto-generated placeholder */
   @api placeholder;
 
-  // Multi-select inputs
+  /** @api {boolean} Enables multi-select mode */
   @api multiSelect = false;
+  /** @api {number|null} Maximum selections; null = unlimited */
   @api maxSelections;
 
   _allowCrossObjectSelection = true;
@@ -138,6 +158,10 @@ export default class PolymorphicLookupFlowWrapper extends LightningElement {
     return this.template.querySelector("c-polymorphic-lookup");
   }
 
+  /**
+   * Flow validation lifecycle hook. Delegates to the inner lookup's reportValidity.
+   * @returns {{isValid: boolean, errorMessage?: string}}
+   */
   @api
   validate() {
     const isValid = this.lookup ? this.lookup.reportValidity() : true;
@@ -147,11 +171,18 @@ export default class PolymorphicLookupFlowWrapper extends LightningElement {
     return { isValid: true };
   }
 
+  /**
+   * Sets a custom error message on the inner lookup.
+   * @param {string} message - Error message (empty string to clear)
+   */
   @api
   setCustomValidity(message) {
     if (this.lookup) this.lookup.setCustomValidity(message);
   }
 
+  /**
+   * Triggers inline error display on the inner lookup.
+   */
   @api
   reportValidity() {
     if (this.lookup) this.lookup.reportValidity();

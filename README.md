@@ -1,6 +1,18 @@
+<div align="center">
+
 # LWC Polymorphic Lookup
 
-A production-ready, plug-and-play combobox field for Salesforce LWC and Flow screens. Search across **one or more SObject types**, select a record, and receive a rich event with the record's ID, name, object type, and icon.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Salesforce](https://img.shields.io/badge/Salesforce-LWC-00A1E0?logo=salesforce&logoColor=white)](https://developer.salesforce.com/docs/component-library/overview/components)
+[![Apex](https://img.shields.io/badge/Apex-Controller-blueviolet)](force-app/main/default/classes/PolymorphicLookupController.cls)
+[![Flow Ready](https://img.shields.io/badge/Flow-Screen%20Component-green)](force-app/main/default/lwc/polymorphicLookupFlowWrapper)
+
+A production-ready, plug-and-play combobox field for Salesforce LWC and Flow screens.
+Search across **one or more SObject types**, select a record, and receive a rich event with the record's ID, name, object type, and icon.
+
+**Built by [Darren Seet](https://github.com/SFDarren)**
+
+</div>
 
 <video src="https://github.com/user-attachments/assets/d1d0709b-6c87-4561-be92-d511bdcd3234" controls width="100%" autoplay></video>
 

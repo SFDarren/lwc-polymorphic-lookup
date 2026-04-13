@@ -1,7 +1,14 @@
-/* polymorphicLookup.js
- * date: 10 Apr 2026
- * author: Darren Seet
- * */
+/**
+ * @module polymorphicLookup
+ * @description Combobox-style lookup that searches across one or more Salesforce
+ *   SObject types. Supports single-select, multi-select (pill-based), inline
+ *   dropdown, "Show All" modal, per-object SOQL filters, "New Record" creation
+ *   via NavigationMixin, and full Form API (checkValidity / reportValidity /
+ *   setCustomValidity). Not exposed directly — must be consumed by a wrapper.
+ * @author Darren Seet
+ * @since 2026-04-10
+ * @license MIT
+ */
 import { LightningElement, api, track } from "lwc";
 import { NavigationMixin } from "lightning/navigation";
 import searchRecords from "@salesforce/apex/PolymorphicLookupController.searchRecords";
@@ -9,29 +16,55 @@ import getLatestCreatedRecord from "@salesforce/apex/PolymorphicLookupController
 import getRecordById from "@salesforce/apex/PolymorphicLookupController.getRecordById";
 import userId from "@salesforce/user/Id";
 
+/** @constant {number} Throttle delay (ms) between keystrokes before firing search */
 const SEARCH_THROTTLE_MS = 300;
+/** @constant {number} Poll interval (ms) for detecting new-record popup closure */
 const NEW_RECORD_POLL_MS = 500;
+/** @constant {number} Delay (ms) before programmatic focus — 0 defers to next microtask */
 const FOCUS_DELAY_MS = 0;
+
+/**
+ * @typedef {Object} ObjectOption
+ * @property {string} label    - Display label in the object switcher
+ * @property {string} plural   - Plural form used in placeholder and modal header
+ * @property {string} value    - SObject API name passed to Apex
+ * @property {string} iconName - SLDS icon reference (e.g. "standard:account")
+ * @property {string} [subtitleField] - API name of a second field shown below the record name
+ */
 
 export default class PolymorphicLookup extends NavigationMixin(
   LightningElement
 ) {
+  /** @api {string} Field label displayed above the input */
   @api label = "Related To";
+  /** @api {ObjectOption[]} Array of object configurations for the switcher */
   @api objectOptions = [];
+  /** @api {boolean} When true, shows red asterisk and triggers validation */
   @api required = false;
+  /** @api {Object.<string, string>} Map of SObject API name → SOQL WHERE clause */
   @api filterConfig = {};
+  /** @api {boolean} When true, adds a "New {Object}" option in the dropdown */
   @api showCreate;
+  /** @api {boolean} When true, disables all interaction */
   @api disabled = false;
-  @api variant = "standard"; // "standard" | "label-hidden"
+  /** @api {string} Visual variant — "standard" or "label-hidden" */
+  @api variant = "standard";
+  /** @api {string} Overrides the auto-generated placeholder text */
   @api placeholder;
+  /** @api {number} Max records shown in inline dropdown */
   @api dropdownLimit = 5;
+  /** @api {number} Max records shown in "Show All" modal */
   @api modalLimit = 50;
+  /** @api {string} Tooltip text displayed next to the label */
   @api fieldLevelHelp;
+  /** @api {string} Validation error text when required and empty */
   @api messageWhenValueMissing = "Complete this field.";
-  @api valueObjectApiName; // required when objectOptions has >1 entry and value is set externally
+  /** @api {string} Required for value pre-population when objectOptions has >1 entry */
+  @api valueObjectApiName;
 
-  // Multi-select
+  /** @api {boolean} Enables multi-select mode with pill-based selection */
   @api multiSelect = false;
+  /** @api {number|null} Maximum number of selections; null = unlimited */
   @api maxSelections;
 
   _allowCrossObjectSelection = true;
@@ -400,11 +433,19 @@ export default class PolymorphicLookup extends NavigationMixin(
     return null;
   }
 
+  /**
+   * Checks validity without showing UI errors.
+   * @returns {boolean} True if the component is valid
+   */
   @api
   checkValidity() {
     return !this.errorMessage;
   }
 
+  /**
+   * Shows or hides the inline error and returns validity.
+   * @returns {boolean} True if valid
+   */
   @api
   reportValidity() {
     const valid = this.checkValidity();
@@ -412,13 +453,20 @@ export default class PolymorphicLookup extends NavigationMixin(
     return valid;
   }
 
+  /**
+   * Sets a custom error message. Pass an empty string to clear.
+   * @param {string} message - Error message to display
+   */
   @api
   setCustomValidity(message) {
     this._customValidity = message || "";
     if (!message) this._showError = false;
   }
 
-  // Programmatically clear all selections in multi-select mode
+  /**
+   * Clears all selections in multi-select mode and fires a 'clear' event.
+   * No-op in single-select mode.
+   */
   @api
   clearAll() {
     if (!this.isMultiSelect) return;

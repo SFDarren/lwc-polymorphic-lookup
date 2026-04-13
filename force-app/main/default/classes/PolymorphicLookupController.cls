@@ -1,4 +1,15 @@
+/**
+ * @description Apex controller for the polymorphicLookup LWC. Provides dynamic
+ *   SOQL search, record-by-ID resolution, and latest-created-record detection.
+ *   All queries use Database.queryWithBinds + AccessLevel.USER_MODE for FLS/CRUD
+ *   enforcement.
+ * @author Darren Seet
+ * @since 2026-04-10
+ */
 public with sharing class PolymorphicLookupController {
+  /**
+   * @description DTO returned to the LWC with record display data.
+   */
   public class LookupRecord {
     @AuraEnabled
     public String id;
@@ -10,6 +21,16 @@ public with sharing class PolymorphicLookupController {
     public String icon;
   }
 
+  /**
+   * @description Searches records by name across any SObject type with optional SOQL WHERE filter.
+   * @param objectApiName SObject API name to query
+   * @param searchKey     Name search term (LIKE match)
+   * @param iconName      SLDS icon reference passed through to the result
+   * @param subtitleField API name of a secondary display field
+   * @param whereClause   Trusted admin-supplied SOQL fragment (not end-user input)
+   * @param queryLimit    Maximum records to return
+   * @return List of matching LookupRecord DTOs
+   */
   @AuraEnabled(cacheable=true)
   public static List<LookupRecord> searchRecords(
     String objectApiName,
@@ -68,6 +89,14 @@ public with sharing class PolymorphicLookupController {
     );
   }
 
+  /**
+   * @description Resolves a single record by ID for pre-population display.
+   * @param recordId      18-char Salesforce record ID
+   * @param objectApiName SObject API name
+   * @param iconName      SLDS icon reference
+   * @param subtitleField API name of a secondary display field
+   * @return Single-element list with the resolved LookupRecord, or empty list
+   */
   @AuraEnabled(cacheable=true)
   public static List<LookupRecord> getRecordById(
     String recordId,
@@ -98,6 +127,14 @@ public with sharing class PolymorphicLookupController {
     );
   }
 
+  /**
+   * @description Fetches the most recent record created by the current user within
+   *   the last 30 seconds. Used after "New Record" popup closes to auto-select.
+   * @param objectApiName SObject API name
+   * @param iconName      SLDS icon reference
+   * @param userId        Current user ID
+   * @return Single-element list with the latest record, or empty list
+   */
   @AuraEnabled
   public static List<LookupRecord> getLatestCreatedRecord(
     String objectApiName,
