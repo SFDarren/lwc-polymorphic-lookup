@@ -210,6 +210,7 @@ Drag **Polymorphic Lookup (Flow)** onto a Flow screen. No JavaScript required.
 | **Field Label**                  | Text    | Label shown above the field                                           |
 | **Object API Names (CSV)**       | Text    | e.g. `Account,Contact,Case`                                           |
 | **Icon Names (CSV)**             | Text    | e.g. `standard:account,standard:contact,standard:case`                |
+| **Plural Labels (CSV)**          | Text    | e.g. `Accounts,Contacts,Opportunities` (auto-generated if blank)      |
 | **Subtitle Fields (CSV)**        | Text    | e.g. `Phone,Email,Status`                                             |
 | **Filter Configuration (JSON)**  | Text    | e.g. `{"Account": "Type = 'Customer'"}`                               |
 | **Required**                     | Boolean | Enables built-in Flow validation                                      |
@@ -311,7 +312,7 @@ c-polymorphic-lookup {
 
 ## Apex Controller
 
-`PolymorphicLookupController` exposes two methods:
+`PolymorphicLookupController` exposes three methods:
 
 | Method                   | Cacheable | Description                                                                                                            |
 | ------------------------ | --------- | ---------------------------------------------------------------------------------------------------------------------- |
