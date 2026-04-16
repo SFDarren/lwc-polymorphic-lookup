@@ -262,6 +262,99 @@ private class PolymorphicLookupControllerTest {
   }
 
   // -------------------------------------------------------------------------
+  // API name validation
+  // -------------------------------------------------------------------------
+
+  @IsTest
+  static void searchRecords_invalidObjectApiName_throwsAuraHandledException() {
+    Boolean caught = false;
+    try {
+      PolymorphicLookupController.searchRecords(
+        'Account; DELETE',
+        'test',
+        'standard:account',
+        null,
+        '',
+        5
+      );
+    } catch (AuraHandledException e) {
+      caught = true;
+      Assert.isTrue(
+        e.getMessage().contains('Invalid object API name'),
+        'Should mention invalid object API name'
+      );
+    }
+    Assert.isTrue(
+      caught,
+      'Should throw AuraHandledException for invalid object name'
+    );
+  }
+
+  @IsTest
+  static void searchRecords_invalidSubtitleField_throwsAuraHandledException() {
+    Boolean caught = false;
+    try {
+      PolymorphicLookupController.searchRecords(
+        'Account',
+        'test',
+        'standard:account',
+        'Name; DROP TABLE',
+        '',
+        5
+      );
+    } catch (AuraHandledException e) {
+      caught = true;
+      Assert.isTrue(
+        e.getMessage().contains('Invalid field name'),
+        'Should mention invalid field name'
+      );
+    }
+    Assert.isTrue(
+      caught,
+      'Should throw AuraHandledException for invalid field name'
+    );
+  }
+
+  @IsTest
+  static void getRecordById_invalidObjectApiName_throwsAuraHandledException() {
+    Boolean caught = false;
+    try {
+      PolymorphicLookupController.getRecordById(
+        MOCK_ID_1,
+        'DROP TABLE Accounts',
+        'standard:account',
+        null
+      );
+    } catch (AuraHandledException e) {
+      caught = true;
+    }
+    Assert.isTrue(
+      caught,
+      'Should throw AuraHandledException for invalid object name'
+    );
+  }
+
+  @IsTest
+  static void searchRecords_customObjectApiName_isValid() {
+    PolymorphicLookupController.mockQueryRows = new List<SObject>();
+
+    List<PolymorphicLookupController.LookupRecord> results = PolymorphicLookupController.searchRecords(
+      'My_Custom_Object__c',
+      '',
+      'standard:custom',
+      'Custom_Field__c',
+      '',
+      5
+    );
+
+    Assert.areEqual(
+      0,
+      results.size(),
+      'Custom object names with __c suffix should be accepted'
+    );
+  }
+
+  // -------------------------------------------------------------------------
   // getLatestCreatedRecord
   // -------------------------------------------------------------------------
 
