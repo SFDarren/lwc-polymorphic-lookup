@@ -295,6 +295,10 @@ export default class PolymorphicLookup extends NavigationMixin(
 
   disconnectedCallback() {
     this._stopPositionLoop();
+    if (this.searchThrottlingTimeout) {
+      clearTimeout(this.searchThrottlingTimeout);
+      this.searchThrottlingTimeout = null;
+    }
     if (this.locationHrefPoll) {
       clearInterval(this.locationHrefPoll);
       this.locationHrefPoll = null;
