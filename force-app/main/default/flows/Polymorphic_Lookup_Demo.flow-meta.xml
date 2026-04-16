@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>65.0</apiVersion>
+    <interviewLabel
+  >Polymorphic Lookup Demo {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Polymorphic Lookup Demo</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>Flow</processType>
+    <status>Active</status>
+    <environments>Default</environments>
+    <start>
+        <locationX>50</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Lookup_Screen</targetReference>
+        </connector>
+    </start>
+
+    <!-- Screen 1: Polymorphic Lookup selection -->
+    <screens>
+        <name>Lookup_Screen</name>
+        <label>Select a Record</label>
+        <locationX>176</locationX>
+        <locationY>158</locationY>
+        <allowBack>false</allowBack>
+        <allowFinish>true</allowFinish>
+        <allowPause>false</allowPause>
+        <connector>
+            <targetReference>Confirmation_Screen</targetReference>
+        </connector>
+        <fields>
+            <name>SingleSelectLookup</name>
+            <extensionName>c:polymorphicLookupFlowWrapper</extensionName>
+            <fieldType>ComponentInstance</fieldType>
+            <inputParameters>
+                <name>label</name>
+                <value>
+                    <stringValue>Related To</stringValue>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>objectApiNames</name>
+                <value>
+                    <stringValue>Account,Contact,Opportunity</stringValue>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>iconNames</name>
+                <value>
+                    <stringValue
+          >standard:account,standard:contact,standard:opportunity</stringValue>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>pluralLabels</name>
+                <value>
+                    <stringValue>Accounts,Contacts,Opportunities</stringValue>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>subtitleFields</name>
+                <value>
+                    <stringValue>Phone,Email,StageName</stringValue>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>required</name>
+                <value>
+                    <booleanValue>true</booleanValue>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>showCreate</name>
+                <value>
+                    <booleanValue>true</booleanValue>
+                </value>
+            </inputParameters>
+            <inputsOnNextNavToAssocScrn
+      >UseStoredValues</inputsOnNextNavToAssocScrn>
+            <isRequired>true</isRequired>
+            <outputParameters>
+                <assignToReference>varSelectedRecordId</assignToReference>
+                <name>selectedRecordId</name>
+            </outputParameters>
+            <outputParameters>
+                <assignToReference>varSelectedObjectType</assignToReference>
+                <name>selectedObjectType</name>
+            </outputParameters>
+        </fields>
+        <fields>
+            <name>MultiSelectLookup</name>
+            <extensionName>c:polymorphicLookupFlowWrapper</extensionName>
+            <fieldType>ComponentInstance</fieldType>
+            <inputParameters>
+                <name>label</name>
+                <value>
+                    <stringValue>Related Records (Multi-Select)</stringValue>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>objectApiNames</name>
+                <value>
+                    <stringValue>Account,Contact</stringValue>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>iconNames</name>
+                <value>
+                    <stringValue>standard:account,standard:contact</stringValue>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>pluralLabels</name>
+                <value>
+                    <stringValue>Accounts,Contacts</stringValue>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>subtitleFields</name>
+                <value>
+                    <stringValue>Phone,Email</stringValue>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>multiSelect</name>
+                <value>
+                    <booleanValue>true</booleanValue>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>maxSelections</name>
+                <value>
+                    <numberValue>3.0</numberValue>
+                </value>
+            </inputParameters>
+            <inputsOnNextNavToAssocScrn
+      >UseStoredValues</inputsOnNextNavToAssocScrn>
+            <isRequired>true</isRequired>
+            <outputParameters>
+                <assignToReference>varSelectedRecordIds</assignToReference>
+                <name>selectedRecordIds</name>
+            </outputParameters>
+            <outputParameters>
+                <assignToReference>varSelectedObjectTypes</assignToReference>
+                <name>selectedObjectTypes</name>
+            </outputParameters>
+        </fields>
+        <showFooter>true</showFooter>
+        <showHeader>true</showHeader>
+    </screens>
+
+    <!-- Screen 2: Confirmation / summary of what was selected -->
+    <screens>
+        <name>Confirmation_Screen</name>
+        <label>Selection Summary</label>
+        <locationX>176</locationX>
+        <locationY>350</locationY>
+        <allowBack>true</allowBack>
+        <allowFinish>true</allowFinish>
+        <allowPause>false</allowPause>
+        <fields>
+            <name>SummaryDisplay</name>
+            <fieldType>DisplayText</fieldType>
+            <fieldText
+      >&lt;p&gt;&lt;b&gt;Single-Select Result&lt;/b&gt;&lt;/p&gt;
+&lt;p&gt;Record ID: {!varSelectedRecordId}&lt;/p&gt;
+&lt;p&gt;Object Type: {!varSelectedObjectType}&lt;/p&gt;
+&lt;p&gt;&amp;nbsp;&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Multi-Select Result&lt;/b&gt;&lt;/p&gt;
+&lt;p&gt;Record IDs: {!varSelectedRecordIds}&lt;/p&gt;
+&lt;p&gt;Object Types: {!varSelectedObjectTypes}&lt;/p&gt;</fieldText>
+        </fields>
+        <showFooter>true</showFooter>
+        <showHeader>true</showHeader>
+    </screens>
+
+    <!-- Flow variables -->
+    <variables>
+        <name>varSelectedRecordId</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <name>varSelectedObjectType</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <name>varSelectedRecordIds</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <name>varSelectedObjectTypes</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+</Flow>

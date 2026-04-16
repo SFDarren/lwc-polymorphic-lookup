@@ -150,6 +150,24 @@ export default class ParentComponent extends LightningElement {
     }
   ];
 
+  // ── Example 4: Embedded Flow ──────────────────────────────────────────
+  @track showFlow = true;
+
+  handleFlowStatusChange(event) {
+    if (event.detail.status === "FINISHED") {
+      this.showFlow = false;
+    }
+  }
+
+  handleRestartFlow() {
+    this.showFlow = false;
+    // Force re-render by toggling off then on in the next microtask
+    // eslint-disable-next-line @lwc/lwc/no-async-operation
+    setTimeout(() => {
+      this.showFlow = true;
+    }, 0);
+  }
+
   // ── Shared event handler ───────────────────────────────────────────────
   handleLookupSelection(event) {
     const {

@@ -181,6 +181,49 @@
             </c-polymorphic-lookup>
           </div>
         </lightning-card>
+
+        <!-- Example 4: Embedded Flow -->
+        <lightning-card
+          title="Example 4 — Flow Screen Component"
+          icon-name="standard:flow"
+          class="slds-m-top_small"
+        >
+          <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+            <p
+              class="slds-text-body_small slds-text-color_weak slds-m-bottom_small"
+            >
+              The same component used inside a Screen Flow via
+              <code>polymorphicLookupFlowWrapper</code>. This is the
+              <strong>Polymorphic_Lookup_Demo</strong> Flow running with
+              <code>&lt;lightning-flow&gt;</code>. Single-select (required) +
+              multi-select (max 3) on one screen, followed by a confirmation
+              screen showing the selected IDs.
+            </p>
+            <template lwc:if={showFlow}>
+              <lightning-flow
+                flow-api-name="Polymorphic_Lookup_Demo"
+                onstatuschange={handleFlowStatusChange}
+              >
+              </lightning-flow>
+            </template>
+            <template lwc:else>
+              <div
+                class="slds-box slds-box_small slds-text-align_center slds-theme_shade"
+              >
+                <p class="slds-text-body_small slds-text-color_weak">
+                  Flow completed.
+                </p>
+                <lightning-button
+                  label="Restart Flow"
+                  variant="brand"
+                  onclick={handleRestartFlow}
+                  class="slds-m-top_small"
+                >
+                </lightning-button>
+              </div>
+            </template>
+          </div>
+        </lightning-card>
       </lightning-layout-item>
 
       <!-- ── Right column: Live event log ──────────────────────────── -->
