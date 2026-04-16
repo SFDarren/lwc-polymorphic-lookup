@@ -40,6 +40,8 @@ public with sharing class PolymorphicLookupController {
     String whereClause,
     Integer queryLimit
   ) {
+    validateApiName(objectApiName, 'object API name');
+
     Integer limitRecs = queryLimit != null ? queryLimit : 5;
     String key = searchKey != null ? searchKey : '';
 
@@ -104,6 +106,8 @@ public with sharing class PolymorphicLookupController {
     String iconName,
     String subtitleField
   ) {
+    validateApiName(objectApiName, 'object API name');
+
     String safeObject = String.escapeSingleQuotes(objectApiName);
     String safeSubtitleField = sanitizeFieldName(subtitleField);
 
@@ -141,6 +145,8 @@ public with sharing class PolymorphicLookupController {
     String iconName,
     String userId
   ) {
+    validateApiName(objectApiName, 'object API name');
+
     String safeObject = String.escapeSingleQuotes(objectApiName);
     Datetime withinTime = Datetime.now().addSeconds(-30);
 
@@ -159,12 +165,26 @@ public with sharing class PolymorphicLookupController {
     );
   }
 
+  // Validates that a string is a legal SObject or field API name (alphanumeric + underscores,
+  // with optional namespace prefix and __c / __r / __mdt / __e / __x suffixes).
+  private static final Pattern SAFE_API_NAME = Pattern.compile(
+    '^[a-zA-Z][a-zA-Z0-9_]*(__(c|r|mdt|e|x|b|pc|pr))?$'
+  );
+
+  private static void validateApiName(String name, String paramLabel) {
+    if (String.isBlank(name) || !SAFE_API_NAME.matcher(name).matches()) {
+      throw new AuraHandledException('Invalid ' + paramLabel + ': ' + name);
+    }
+  }
+
   // Sanitize a developer-supplied field name for safe inclusion in a dynamic query.
   // Returns null when the field is blank so callers can skip SELECT and subtitle mapping.
   private static String sanitizeFieldName(String fieldName) {
-    return String.isNotBlank(fieldName)
-      ? String.escapeSingleQuotes(fieldName)
-      : null;
+    if (String.isBlank(fieldName)) {
+      return null;
+    }
+    validateApiName(fieldName, 'field name');
+    return String.escapeSingleQuotes(fieldName);
   }
 
   @TestVisible
@@ -201,14 +221,10 @@ public with sharing class PolymorphicLookupController {
         results.add(rec);
       }
     } catch (System.QueryException qe) {
-      System.debug(
-        LoggingLevel.WARN,
-        'PolymorphicLookup query failed: ' + qe.getMessage()
-      );
+      throw new AuraHandledException('Search failed: ' + qe.getMessage());
     } catch (Exception e) {
-      System.debug(
-        LoggingLevel.ERROR,
-        'PolymorphicLookup unexpected error: ' + e.getMessage()
+      throw new AuraHandledException(
+        'An unexpected error occurred: ' + e.getMessage()
       );
     }
     return results;
