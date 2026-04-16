@@ -18,6 +18,8 @@ export default class PolymorphicLookupFlowWrapper extends LightningElement {
   @api objectApiNames;
   /** @api {string} Comma-separated SLDS icon names (parallel to objectApiNames) */
   @api iconNames;
+  /** @api {string} Comma-separated plural labels (parallel to objectApiNames, e.g. "Accounts,Contacts") */
+  @api pluralLabels;
   /** @api {string} Comma-separated subtitle field API names (parallel to objectApiNames) */
   @api subtitleFields;
   /** @api {boolean} Enables Flow validation */
@@ -97,6 +99,9 @@ export default class PolymorphicLookupFlowWrapper extends LightningElement {
     const icons = this.iconNames
       ? this.iconNames.split(",").map((item) => item.trim())
       : [];
+    const plurals = this.pluralLabels
+      ? this.pluralLabels.split(",").map((item) => item.trim())
+      : [];
     const subtitles = this.subtitleFields
       ? this.subtitleFields.split(",").map((item) => item.trim())
       : [];
@@ -104,12 +109,28 @@ export default class PolymorphicLookupFlowWrapper extends LightningElement {
     this.computedObjectOptions = names.map((apiName, index) => {
       return {
         label: apiName,
-        plural: apiName + "s",
+        plural: plurals[index] || this._defaultPlural(apiName),
         value: apiName,
         iconName: icons[index] || "standard:default",
         subtitleField: subtitles[index] || "CreatedDate"
       };
     });
+  }
+
+  _defaultPlural(name) {
+    if (name.endsWith("y") && !/[aeiou]y$/i.test(name)) {
+      return name.slice(0, -1) + "ies";
+    }
+    if (
+      name.endsWith("s") ||
+      name.endsWith("x") ||
+      name.endsWith("z") ||
+      name.endsWith("sh") ||
+      name.endsWith("ch")
+    ) {
+      return name + "es";
+    }
+    return name + "s";
   }
 
   parseFilterJson() {

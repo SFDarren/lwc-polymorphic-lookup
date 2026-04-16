@@ -32,6 +32,13 @@
         role="inputOnly"
       />
             <property
+        name="pluralLabels"
+        label="Plural Labels (CSV)"
+        type="String"
+        description="Comma-separated plural labels matching each object (e.g., Accounts,Contacts,Opportunities). Auto-generated if blank."
+        role="inputOnly"
+      />
+            <property
         name="subtitleFields"
         label="Subtitle Fields (CSV)"
         type="String"
