@@ -149,6 +149,7 @@ export default class PolymorphicLookup extends NavigationMixin(
   searchThrottlingTimeout;
   _searchGeneration = 0;
   _focusedIndex = -1;
+  _activedescendantId = null;
 
   // Configuration for the Modal Datatable.
   // 'button' type with 'base' variant renders as a text link.
@@ -413,6 +414,10 @@ export default class PolymorphicLookup extends NavigationMixin(
     return `Search ${this.selectedObject.plural || "records"}`;
   }
 
+  get activedescendantId() {
+    return this._activedescendantId || undefined;
+  }
+
   get labelClass() {
     return this.variant === "label-hidden"
       ? "slds-form-element__label slds-assistive-text"
@@ -554,15 +559,17 @@ export default class PolymorphicLookup extends NavigationMixin(
     this.isObjectDropdownOpen = false;
     this.isSearchDropdownOpen = true;
     this._focusedIndex = -1;
+    this._activedescendantId = null;
     this._calculateDropdownPosition();
     this._startPositionLoop();
-    this.performSearch(this.dropdownLimit);
+    this.performSearch(this.dropdownLimit, false);
   }
 
   handleSearchBlur(event) {
     if (this._isInternalFocusMove(event)) return;
     this.isSearchDropdownOpen = false;
     this._focusedIndex = -1;
+    this._activedescendantId = null;
     this._stopPositionLoop();
   }
 
@@ -594,7 +601,33 @@ export default class PolymorphicLookup extends NavigationMixin(
       } else {
         this._focusedIndex = Math.max(this._focusedIndex - 1, 0);
       }
-      items[this._focusedIndex].focus();
+      const focused = items[this._focusedIndex];
+      this._activedescendantId = focused.id || null;
+      focused.scrollIntoView({ block: "nearest" });
+    }
+
+    if (event.key === "Enter" && this._focusedIndex >= 0) {
+      event.preventDefault();
+      const items = this.refs.recordListbox
+        ? Array.from(
+            this.refs.recordListbox.querySelectorAll("li[tabindex='0']")
+          )
+        : [];
+      if (items[this._focusedIndex]) {
+        const item = items[this._focusedIndex];
+        const action = item.dataset.action;
+        if (action === "show-all") {
+          this.handleShowAll();
+        } else if (action === "new-record") {
+          this.handleNewRecord(event);
+        } else {
+          this.finalizeSelection(
+            item.dataset.id,
+            item.dataset.title,
+            item.dataset.icon
+          );
+        }
+      }
     }
   }
 
@@ -609,7 +642,7 @@ export default class PolymorphicLookup extends NavigationMixin(
 
     // eslint-disable-next-line @lwc/lwc/no-async-operation
     this.searchThrottlingTimeout = setTimeout(() => {
-      this.performSearch(this.dropdownLimit);
+      this.performSearch(this.dropdownLimit, false);
     }, SEARCH_THROTTLE_MS);
   }
 
@@ -618,8 +651,7 @@ export default class PolymorphicLookup extends NavigationMixin(
   }
 
   // Reusable search function
-  performSearch(limitSize) {
-    const isModal = limitSize > 5;
+  performSearch(limitSize, isModal) {
     if (isModal) this.isModalLoading = true;
     else this.isLoading = true;
 
@@ -677,7 +709,7 @@ export default class PolymorphicLookup extends NavigationMixin(
     this.isSearchDropdownOpen = false;
     this.isModalOpen = true;
 
-    this.performSearch(this.modalLimit);
+    this.performSearch(this.modalLimit, true);
 
     // Focus first focusable element in modal after render
     // eslint-disable-next-line @lwc/lwc/no-async-operation
@@ -695,6 +727,37 @@ export default class PolymorphicLookup extends NavigationMixin(
   handleCloseModal() {
     this.isModalOpen = false;
     this._focusSearchInput();
+  }
+
+  handleModalKeyDown(event) {
+    if (event.key === "Escape") {
+      event.stopPropagation();
+      this.handleCloseModal();
+      return;
+    }
+    if (event.key !== "Tab") return;
+
+    const modal = this.template.querySelector(".slds-modal");
+    if (!modal) return;
+
+    const focusable = Array.from(
+      modal.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+    ).filter((el) => !el.disabled && el.offsetParent !== null);
+
+    if (!focusable.length) return;
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    if (event.shiftKey && this.template.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && this.template.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
   }
 
   handleModalRowAction(event) {

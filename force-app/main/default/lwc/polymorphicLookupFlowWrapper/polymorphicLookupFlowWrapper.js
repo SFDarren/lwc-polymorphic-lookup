@@ -34,11 +34,30 @@ export default class PolymorphicLookupFlowWrapper extends LightningElement {
   @api modalLimit = 50;
   /** @api {string} Overrides auto-generated placeholder */
   @api placeholder;
+  /** @api {boolean} Disables all interaction */
+  @api disabled = false;
+  /** @api {string} Visual variant — "standard" or "label-hidden" */
+  @api variant = "standard";
+  /** @api {string} Tooltip text displayed next to the label */
+  @api fieldLevelHelp;
+  /** @api {string} Validation error text when required and empty */
+  @api messageWhenValueMissing;
+  /** @api {string} Object API name for pre-population (required when >1 object) */
+  @api valueObjectApiName;
 
   /** @api {boolean} Enables multi-select mode */
   @api multiSelect = false;
   /** @api {number|null} Maximum selections; null = unlimited */
   @api maxSelections;
+
+  _showPills = true;
+  @api
+  get showPills() {
+    return this._showPills;
+  }
+  set showPills(val) {
+    this._showPills = val !== false && val !== "false";
+  }
 
   _allowCrossObjectSelection = true;
   @api
@@ -173,6 +192,16 @@ export default class PolymorphicLookupFlowWrapper extends LightningElement {
         new FlowAttributeChangeEvent("selectedObjectType", objectType)
       );
     }
+  }
+
+  // Avoid passing undefined to the inner component which would override its defaults
+  get computedMessageWhenValueMissing() {
+    return this.messageWhenValueMissing || "Complete this field.";
+  }
+
+  // Only pass value when it's actually set (avoids triggering the inner setter with undefined)
+  get computedValue() {
+    return this._selectedRecordId || null;
   }
 
   get lookup() {

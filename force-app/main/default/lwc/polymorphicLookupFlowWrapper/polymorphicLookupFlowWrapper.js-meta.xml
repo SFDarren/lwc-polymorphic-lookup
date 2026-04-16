@@ -94,6 +94,37 @@
       />
 
             <property
+        name="disabled"
+        label="Disabled"
+        type="Boolean"
+        default="false"
+        description="Disables all interaction"
+        role="inputOnly"
+      />
+            <property
+        name="variant"
+        label="Variant"
+        type="String"
+        default="standard"
+        description="Visual variant: standard or label-hidden"
+        role="inputOnly"
+      />
+            <property
+        name="fieldLevelHelp"
+        label="Help Text"
+        type="String"
+        description="Tooltip text displayed next to the label"
+        role="inputOnly"
+      />
+            <property
+        name="messageWhenValueMissing"
+        label="Required Error Message"
+        type="String"
+        description="Validation error text when required and empty"
+        role="inputOnly"
+      />
+
+            <property
         name="multiSelect"
         label="Multi-Select"
         type="Boolean"
@@ -116,13 +147,28 @@
         description="Caps the number of records that can be selected. Leave blank for unlimited."
         role="inputOnly"
       />
+            <property
+        name="showPills"
+        label="Show Pills"
+        type="Boolean"
+        default="true"
+        description="Shows pill container for selected records in multi-select mode"
+        role="inputOnly"
+      />
 
-            <!-- Single-select outputs -->
+            <!-- Single-select: input for pre-population, output for selection -->
             <property
         name="selectedRecordId"
-        label="Output: Selected Record ID"
+        label="Selected Record ID"
         type="String"
-        role="outputOnly"
+        description="Record ID — set to pre-populate, read to get the selection"
+      />
+            <property
+        name="valueObjectApiName"
+        label="Pre-populate Object API Name"
+        type="String"
+        description="Required for pre-population when multiple objects are configured"
+        role="inputOnly"
       />
             <property
         name="selectedObjectType"

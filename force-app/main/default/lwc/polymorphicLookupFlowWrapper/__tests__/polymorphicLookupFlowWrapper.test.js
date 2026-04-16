@@ -234,11 +234,12 @@ describe("Flow validation contract", () => {
     expect(result.isValid).toBe(true);
   });
 
-  it("validate() returns isValid: false when required and no selection", () => {
+  it("validate() returns isValid: false when required and no selection", async () => {
     const el = createComponent({
       objectApiNames: "Account",
       required: true
     });
+    await flushPromises();
     const result = el.validate();
     expect(result.isValid).toBe(false);
   });
@@ -257,6 +258,99 @@ describe("Flow validation contract", () => {
     );
     expect(errorEl).not.toBeNull();
     expect(errorEl.textContent).toBe("Test error");
+  });
+});
+
+// ===========================================================================
+// New property pass-through
+// ===========================================================================
+describe("new property pass-through to inner lookup", () => {
+  it("passes disabled to inner component", async () => {
+    const el = createComponent({
+      objectApiNames: "Account",
+      disabled: true
+    });
+    await flushPromises();
+
+    const inner = el.shadowRoot.querySelector("c-polymorphic-lookup");
+    expect(inner.disabled).toBe(true);
+  });
+
+  it("passes variant to inner component", async () => {
+    const el = createComponent({
+      objectApiNames: "Account",
+      variant: "label-hidden"
+    });
+    await flushPromises();
+
+    const inner = el.shadowRoot.querySelector("c-polymorphic-lookup");
+    expect(inner.variant).toBe("label-hidden");
+  });
+
+  it("passes fieldLevelHelp to inner component", async () => {
+    const el = createComponent({
+      objectApiNames: "Account",
+      fieldLevelHelp: "Some help text"
+    });
+    await flushPromises();
+
+    const inner = el.shadowRoot.querySelector("c-polymorphic-lookup");
+    expect(inner.fieldLevelHelp).toBe("Some help text");
+  });
+
+  it("passes messageWhenValueMissing to inner component", async () => {
+    const el = createComponent({
+      objectApiNames: "Account",
+      messageWhenValueMissing: "Please select a record"
+    });
+    await flushPromises();
+
+    const inner = el.shadowRoot.querySelector("c-polymorphic-lookup");
+    expect(inner.messageWhenValueMissing).toBe("Please select a record");
+  });
+
+  it("defaults messageWhenValueMissing when not set", async () => {
+    const el = createComponent({ objectApiNames: "Account" });
+    await flushPromises();
+
+    const inner = el.shadowRoot.querySelector("c-polymorphic-lookup");
+    expect(inner.messageWhenValueMissing).toBe("Complete this field.");
+  });
+
+  it("passes showPills to inner component", async () => {
+    const el = createComponent({
+      objectApiNames: "Account",
+      multiSelect: true,
+      showPills: false
+    });
+    await flushPromises();
+
+    const inner = el.shadowRoot.querySelector("c-polymorphic-lookup");
+    expect(inner.showPills).toBe(false);
+  });
+
+  it("passes valueObjectApiName to inner component", async () => {
+    const el = createComponent({
+      objectApiNames: "Account,Contact",
+      valueObjectApiName: "Account"
+    });
+    await flushPromises();
+
+    const inner = el.shadowRoot.querySelector("c-polymorphic-lookup");
+    expect(inner.valueObjectApiName).toBe("Account");
+  });
+
+  it("passes selectedRecordId as value for pre-population", async () => {
+    const el = createComponent({
+      objectApiNames: "Account",
+      selectedRecordId: "001000000000001AAA"
+    });
+    await flushPromises();
+
+    const inner = el.shadowRoot.querySelector("c-polymorphic-lookup");
+    // The value setter will be called, triggering resolution
+    // We verify the property was passed through
+    expect(inner.value).not.toBeNull();
   });
 });
 

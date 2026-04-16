@@ -167,8 +167,9 @@ public with sharing class PolymorphicLookupController {
 
   // Validates that a string is a legal SObject or field API name (alphanumeric + underscores,
   // with optional namespace prefix and __c / __r / __mdt / __e / __x suffixes).
+  // Supports namespaced names like ns__Object__c and ns__Field__c.
   private static final Pattern SAFE_API_NAME = Pattern.compile(
-    '^[a-zA-Z][a-zA-Z0-9_]*(__(c|r|mdt|e|x|b|pc|pr))?$'
+    '^[a-zA-Z][a-zA-Z0-9_]*(__[a-zA-Z0-9_]+)*(__(c|r|mdt|e|x|b|pc|pr))?$'
   );
 
   private static void validateApiName(String name, String paramLabel) {

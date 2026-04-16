@@ -354,6 +354,26 @@ private class PolymorphicLookupControllerTest {
     );
   }
 
+  @IsTest
+  static void searchRecords_namespacedObjectApiName_isValid() {
+    PolymorphicLookupController.mockQueryRows = new List<SObject>();
+
+    List<PolymorphicLookupController.LookupRecord> results = PolymorphicLookupController.searchRecords(
+      'ns__Custom_Object__c',
+      '',
+      'standard:custom',
+      'ns__Custom_Field__c',
+      '',
+      5
+    );
+
+    Assert.areEqual(
+      0,
+      results.size(),
+      'Namespaced object/field names with ns__Name__c should be accepted'
+    );
+  }
+
   // -------------------------------------------------------------------------
   // getLatestCreatedRecord
   // -------------------------------------------------------------------------

@@ -134,6 +134,7 @@
                   class="slds-input slds-combobox__input"
                   aria-autocomplete="list"
                   aria-controls="record-listbox"
+                  aria-activedescendant={activedescendantId}
                   aria-label={searchAriaLabel}
                   autocomplete="off"
                   role="combobox"
@@ -192,6 +193,7 @@
                   <template for:each={filteredSearchResults} for:item="rec">
                     <li
                       key={rec.id}
+                      id={rec.id}
                       role="presentation"
                       class="slds-listbox__item"
                       onmousedown={handleRecordSelect}
@@ -262,6 +264,7 @@
                   </template>
 
                   <li
+                    id="opt-show-all"
                     role="presentation"
                     class="slds-listbox__item"
                     onmousedown={handleShowAll}
@@ -293,6 +296,7 @@
 
                   <template lwc:if={showCreate}>
                     <li
+                      id="opt-new-record"
                       role="presentation"
                       class="slds-listbox__item"
                       onmousedown={handleNewRecord}
@@ -425,6 +429,7 @@
       aria-modal="true"
       aria-labelledby="modal-heading-01"
       class="slds-modal slds-fade-in-open slds-modal_medium"
+      onkeydown={handleModalKeyDown}
     >
       <div class="slds-modal__container">
         <button
