@@ -14,7 +14,7 @@ Search across **one or more SObject types**, select a record, and receive a rich
 
 </div>
 
-<video src="https://github.com/user-attachments/assets/d1d0709b-6c87-4561-be92-d511bdcd3234" controls width="100%" autoplay></video>
+<video src="https://github.com/user-attachments/assets/22c8393b-c440-4987-8ebc-c7bfceec4a81" controls width="100%" autoplay></video>
 
 ---
 
